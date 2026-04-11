@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-dark"><i class="bi bi-clipboard-check me-2 text-danger"></i>DUYỆT HỒ SƠ XÉT TUYỂN</h3>
+        <div class="btn-group shadow-sm">
+            <a href="{{ url_for('admin.view_all_applications') }}" class="btn btn-outline-dark btn-sm">Tất cả</a>
+            <a href="{{ url_for('admin.view_all_applications', status='Chờ duyệt') }}" class="btn btn-outline-warning btn-sm">Đang chờ</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr class="small text-uppercase fw-bold">
+                        <th class="ps-4 py-3">Thí sinh</th>
+                        <th>Ngành đăng ký</th>
+                        <th>Điểm</th>
+                        <th>Trạng thái</th>
+                        <th class="text-center">Thao tác duyệt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pt, ho_ten, ten_nganh in applications %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-primary">{{ ho_ten }}</div>
+                            <small class="text-muted">Mã HS: {{ pt.MaHSO }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ ten_nganh }}</div>
+                            <small class="badge bg-light text-dark border">{{ pt.MaNganh }}</small>
+                        </td>
+                        <td class="fw-bold text-danger fs-5">{{ pt.Diem }}</td>
+                        <td>
+                            {% if pt.TrangThai.name == 'CHO_DUYET' %}
+                                <span class="badge bg-warning text-dark">{{ pt.TrangThai.value }}</span>
+                            {% elif pt.TrangThai.name == 'TRUNG_TUYEN' %}
+                                <span class="badge bg-success">{{ pt.TrangThai.value }}</span>
+                            {% else %}
+                                <span class="badge bg-danger">{{ pt.TrangThai.value }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if pt.TrangThai.name == 'CHO_DUYET' %}
+                            <div class="btn-group shadow-sm">
+                                <a href="{{ url_for('admin.approve_admission', ma_ptxt=pt.MaPTXT, action='accept') }}" 
+                                   class="btn btn-success px-3" title="Duyệt Trúng Tuyển">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Trúng tuyển
+                                </a>
+                                <a href="{{ url_for('admin.approve_admission', ma_ptxt=pt.MaPTXT, action='reject') }}" 
+                                   class="btn btn-danger px-3" title="Từ chối hồ sơ">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Từ chối
+                                </a>
+                            </div>
+                            {% else %}
+                                <span class="text-muted small italic">Đã xử lý xong</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-link text-decoration-none text-muted">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

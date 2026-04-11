@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-0"><i class="bi bi-building me-2 text-danger"></i>QUẢN LÝ KHOA</h3>
+            <p class="text-muted small mb-0">Danh mục các đơn vị đào tạo trong nhà trường</p>
+        </div>
+        <button class="btn btn-danger shadow-sm px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#addKhoaModal">
+            <i class="bi bi-plus-lg me-2"></i>THÊM KHOA MỚI
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr class="text-uppercase small fw-bold">
+                            <th class="ps-4 py-3" style="width: 20%;">Mã Khoa</th>
+                            <th style="width: 60%;">Tên Khoa Đào Tạo</th>
+                            <th class="text-center" style="width: 20%;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for k in ds_khoa %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="badge bg-dark px-3 py-2">{{ k.MaKhoa }}</span>
+                            </td>
+                            <td class="fw-bold text-dark">{{ k.TenKhoa }}</td>
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <a href="{{ url_for('admin.delete_item', type='khoa', id=k.MaKhoa) }}" 
+                                       class="btn btn-sm btn-outline-danger" 
+                                       onclick="return confirm('Bạn có chắc chắn muốn xóa khoa này? Lưu ý: Nếu khoa có ngành đang hoạt động sẽ không thể xóa.')">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        {% if not ds_khoa %}
+                        <tr>
+                            <td colspan="3" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                Chưa có dữ liệu khoa nào được tạo.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-link text-decoration-none text-muted">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="modal fade" id="addKhoaModal" tabindex="-1" aria-labelledby="addKhoaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content border-0 shadow-lg rounded-4" action="{{ url_for('admin.manage_khoa') }}" method="POST">
+            <div class="modal-header bg-danger text-white border-0 py-3 rounded-top-4">
+                <h5 class="modal-title fw-bold" id="addKhoaModalLabel">THÊM KHOA MỚI</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">MÃ KHOA (VD: CN, AT)</label>
+                    <input type="text" name="ma_khoa" class="form-control border-2" 
+                           placeholder="Nhập 2 ký tự viết hoa" maxlength="2" required 
+                           style="text-transform: uppercase;">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">TÊN KHOA</label>
+                    <input type="text" name="ten_khoa" class="form-control border-2" 
+                           placeholder="VD: Công nghệ thông tin 1" required>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="submit" class="btn btn-danger fw-bold px-4 shadow-sm">LƯU THÔNG TIN</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #fff9f9;
+    }
+    .form-control:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.1);
+    }
+</style>
+{% endblock %}

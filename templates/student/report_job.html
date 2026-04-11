@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold text-uppercase mb-0">Khai báo việc làm</h4>
+                <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary btn-sm">Quay lại</a>
+            </div>
+
+            <div class="card shadow-sm border-0 rounded-4 p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">TÊN CÔNG TY / TỔ CHỨC</label>
+                        <input type="text" name="ten_cty" class="form-control border-0 bg-light py-2" 
+                               value="{{ job.TenCongTy if job else '' }}" placeholder="Ví dụ: FPT Software" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">CHỨC VỤ / VỊ TRÍ</label>
+                        <input type="text" name="chuc_vu" class="form-control border-0 bg-light py-2" 
+                               value="{{ job.ChucVu if job else '' }}" placeholder="Ví dụ: Lập trình viên Backend">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted">ĐỊA CHỈ NƠI LÀM VIỆC</label>
+                        <textarea name="dia_chi" class="form-control border-0 bg-light" rows="2" 
+                                  placeholder="Địa chỉ công ty...">{{ job.DiaChiCongTy if job else '' }}</textarea>
+                    </div>
+                    <div class="mb-4">
+    <label class="form-label small fw-bold text-muted">THỜI GIAN BẮT ĐẦU LÀM VIỆC</label>
+    <input type="date" name="ngay_bat_dau" class="form-control border-0 bg-light py-2" 
+           value="{{ job.ThoiGianBatDau.strftime('%Y-%m-%d') if job and job.ThoiGianBatDau else '' }}">
+</div>
+                    <button type="submit" class="btn btn-danger w-100 py-2 fw-bold rounded-3">
+                        {% if job %} CẬP NHẬT THÔNG TIN {% else %} XÁC NHẬN KHAI BÁO {% endif %}
+                    </button>
+                </form>
+            </div>
+
+            <div class="mt-4 p-3 bg-light rounded-3 text-center">
+                <p class="small text-muted mb-0 italic">
+                    <i class="bi bi-info-circle me-1"></i> Thông tin này phục vụ công tác thống kê sinh viên có việc làm sau tốt nghiệp của nhà trường.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

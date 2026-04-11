@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow border-0 rounded-4">
+            <div class="card-body p-5">
+                <h3 class="text-danger fw-bold text-center mb-4">ĐĂNG KÝ XÉT TUYỂN</h3>
+                
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Chọn ngành học</label>
+                        <select name="ma_nganh" class="form-select border-danger-subtle" required>
+                            <option value="" selected disabled>-- Chọn ngành học từ danh sách --</option>
+                            {% for nganh in ds_nganh %}
+                                <option value="{{ nganh.MaNganh }}">{{ nganh.TenNganh }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Phương thức xét tuyển</label>
+                        <select name="phuong_thuc" class="form-select border-danger-subtle" required>
+                            <option value="XetHocBa">Xét học bạ</option>
+                            <option value="XetDiemThi">Xét điểm thi THPT</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Tổng điểm xét tuyển</label>
+                        <input type="number" step="0.01" name="diem" class="form-control" placeholder="Nhập điểm của bạn" required>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-ptit btn-lg">XÁC NHẬN ĐĂNG KÝ</button>
+                        <a href="{{ url_for('candidate.dashboard') }}" class="btn btn-light">Hủy bỏ</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

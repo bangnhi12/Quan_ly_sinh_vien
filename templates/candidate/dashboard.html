@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold text-dark">BẢNG ĐIỀU KHIỂN THÍ SINH</h2>
+        <p class="text-muted">Chào mừng <strong>{{ hso.HoTen }}</strong>. Vui lòng chọn một tác vụ dưới đây để tiếp tục.</p>
+        <hr class="mx-auto" style="width: 100px; height: 3px; background-color: #ce1212;">
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm border-0 rounded-4 transition-card">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-light text-primary mb-3 mx-auto">
+                        <i class="bi bi-person-bounding-box" style="font-size: 2rem;"></i>
+                    </div>
+                    <h6 class="fw-bold">Hồ Sơ Cá Nhân</h6>
+                    <p class="text-muted" style="font-size: 0.75rem;">Cập nhật CCCD, SĐT để nhà trường liên hệ.</p>
+                    
+                    {% if 'TEMP' in hso.CCCD or 'TEMP' in hso.SDT %}
+                        <span class="badge bg-warning text-dark mb-3" style="font-size: 0.7rem;"><i class="bi bi-exclamation-circle"></i> Cần hoàn thiện</span>
+                    {% else %}
+                        <span class="badge bg-success mb-3" style="font-size: 0.7rem;"><i class="bi bi-check-circle"></i> Đã hoàn thiện</span>
+                    {% endif %}
+                    
+                    <div class="d-grid">
+                        <a href="{{ url_for('candidate.update_profile') }}" class="btn btn-outline-primary btn-sm fw-bold">Cập nhật</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm border-0 rounded-4 transition-card border-top border-danger border-4">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-light text-danger mb-3 mx-auto">
+                        <i class="bi bi-pencil-square" style="font-size: 2rem;"></i>
+                    </div>
+                    <h6 class="fw-bold">Đăng Ký Xét Tuyển</h6>
+                    <p class="text-muted" style="font-size: 0.75rem;">Lựa chọn ngành học và nhập điểm số xét tuyển.</p>
+                    <div class="d-grid mt-4">
+                        <a href="{{ url_for('candidate.register_admission') }}" class="btn btn-ptit btn-sm fw-bold">Đăng ký ngay</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm border-0 rounded-4 transition-card">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-light text-success mb-3 mx-auto">
+                        <i class="bi bi-clipboard-check" style="font-size: 2rem;"></i>
+                    </div>
+                    <h6 class="fw-bold">Kết Quả Xét Tuyển</h6>
+                    <p class="text-muted" style="font-size: 0.75rem;">Theo dõi trạng thái phê duyệt và kết quả.</p>
+                    <div class="d-grid mt-4">
+                        <a href="{{ url_for('candidate.view_results') }}" class="btn btn-outline-success btn-sm fw-bold">Tra cứu</a>
+                    </div>
+                </div>
+            </div>
+                </div>
+                <div class="d-grid mt-4">
+            <a href="{{ url_for('candidate.view_notifications') }}" class="btn btn-outline-primary btn-sm fw-bold">Xem thông báo</a>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm border-0 rounded-4 transition-card">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-light text-warning mb-3 mx-auto">
+                        <i class="bi bi-shield-lock" style="font-size: 2rem;"></i>
+                    </div>
+                    <h6 class="fw-bold">Bảo Mật Tài Khoản</h6>
+                    <p class="text-muted" style="font-size: 0.75rem;">Thay đổi mật khẩu định kỳ để bảo vệ tài khoản.</p>
+                    <div class="d-grid mt-4">
+                        <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-warning btn-sm fw-bold text-dark">Đổi mật khẩu</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .transition-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .transition-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+</style>
+{% endblock %}

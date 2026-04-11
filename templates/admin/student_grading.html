@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body d-flex justify-content-between align-items-center bg-light rounded-4">
+            <div>
+                <h4 class="fw-bold text-dark mb-1">{{ sv.HoTen }}</h4>
+                <p class="text-muted mb-0">Mã SV: <span class="fw-bold">{{ sv.MaSV }}</span> | Lớp: {{ sv.MaLop }}</p>
+            </div>
+            <div class="text-end">
+                <div class="small text-muted text-uppercase fw-bold">GPA Tích lũy</div>
+                <h2 class="text-danger fw-bold mb-0">{{ gpa }}</h2>
+                <span class="badge {% if gpa >= 2.5 %}bg-success{% else %}bg-warning{% endif %}">
+                    {{ xep_loai.value }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover align-middle mb-0">
+                <thead class="table-dark text-center">
+                    <tr class="small">
+                        <th class="py-3">MÃ MÔN</th>
+                        <th class="text-start">TÊN MÔN HỌC</th>
+                        <th>TÍN CHỈ</th>
+                        <th>ĐIỂM HỆ 10</th>
+                        <th>TRẠNG THÁI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for kq, ten_mh, stc in ds_diem %}
+                    <tr class="text-center">
+                        <td><code>{{ kq.MaMH }}</code></td>
+                        <td class="text-start fw-bold text-dark">{{ ten_mh }}</td>
+                        <td>{{ stc }}</td>
+                        <td class="fw-bold text-primary">{{ kq.Diem }}</td>
+                        <td>
+                            {% if kq.Diem >= 4.0 %}
+                                <span class="text-success small fw-bold"><i class="bi bi-check-circle"></i> Đạt</span>
+                            {% else %}
+                                <span class="text-danger small fw-bold"><i class="bi bi-x-circle"></i> Học lại</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    
+                    {% if not ds_diem %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">Chưa có dữ liệu điểm cho sinh viên này.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex justify-content-between">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+        <button class="btn btn-danger px-4 fw-bold shadow-sm" onclick="window.print()">
+            <i class="bi bi-printer me-2"></i> IN BẢNG ĐIỂM TỐT NGHIỆP
+        </button>
+    </div>
+</div>
+
+<style>
+    /* Đường gạch bảng sắc nét */
+    .table-bordered > :not(caption) > * > * {
+        border-width: 1px;
+        border-color: #dee2e6;
+    }
+    .table-striped > tbody > tr:nth-of-type(odd) > * {
+        --bs-table-accent-bg: rgba(0, 0, 0, 0.02);
+    }
+    .table-hover tbody tr:hover {
+        background-color: #fff8f8 !important;
+    }
+</style>
+{% endblock %}

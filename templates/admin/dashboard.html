@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark"><i class="bi bi-speedometer2 me-2"></i>ADMIN DASHBOARD</h2>
+        <span class="badge bg-danger p-2">Phiên làm việc: {{ current_user.ten_dang_nhap }}</span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-primary text-white p-3 rounded-4">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-people-fill fs-1 me-3"></i>
+                    <div>
+                        <h6 class="mb-0">Tổng Thí Sinh</h6>
+                        <h2 class="fw-bold mb-0">{{ count_thisinh }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-success text-white p-3 rounded-4">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-mortarboard-fill fs-1 me-3"></i>
+                    <div>
+                        <h6 class="mb-0">Sinh Viên Chính Quy</h6>
+                        <h2 class="fw-bold mb-0">{{ count_sinhvien }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-warning text-dark p-3 rounded-4 position-relative">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-file-earmark-text-fill fs-1 me-3"></i>
+                    <div>
+                        <h6 class="mb-0">Hồ Sơ Chờ Duyệt</h6>
+                        <h2 class="fw-bold mb-0">{{ count_cho_duyet }}</h2>
+                    </div>
+                </div>
+                {% if count_cho_duyet > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle"></span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white fw-bold border-0 pt-3">QUẢN LÝ HỆ THỐNG</div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('admin.manage_khoa') }}" class="list-group-item list-group-item-action border-0 py-3">
+                            <i class="bi bi-building me-2"></i> Quản lý Khoa
+                        </a>
+                        <a href="{{ url_for('admin.manage_nganh') }}" class="list-group-item list-group-item-action border-0 py-3">
+                            <i class="bi bi-diagram-3 me-2"></i> Quản lý Ngành
+                        </a>
+                        <a href="{{url_for('admin.view_all_applications')}}" class="list-group-item list-group-item-action border-0 py-3 text-danger fw-bold">
+                            <i class="bi bi-check2-square me-2"></i> Duyệt Hồ Sơ
+                        </a>
+                        <a href="{{url_for('admin.input_grade')}}" class="list-group-item list-group-item-action border-0 py-3">
+                            <i class="bi bi-book me-2"></i> Nhập điểm cho sinh viên
+                        </a>
+                        <a href="{{ url_for('admin.graduation_list') }}" class="list-group-item list-group-item-action border-0 py-3 text-success fw-bold">
+                            <i class="bi bi-mortarboard-fill me-2"></i> Danh sách tốt nghiệp của sinh viên
+                        </a>
+                        <a href="{{ url_for('admin.view_student_jobs') }}" class="list-group-item list-group-item-action border-0 py-3 text-info fw-bold">
+                            <i class="bi bi-briefcase-fill me-2"></i> Việc làm sau tốt nghiệp
+                        </a>
+                        <button type="button" class="list-group-item list-group-item-action border-0 py-3 text-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalNotify">
+                            <i class="bi bi-bell me-2"></i> Gửi thông báo hệ thống
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white fw-bold border-0 pt-3 text-uppercase">Hồ sơ chờ duyệt mới nhất</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">Thí sinh</th>
+                                    <th>Ngành</th>
+                                    <th>Điểm</th>
+                                    <th>Trạng thái</th>
+                                    <th class="text-center">Duyệt nhanh</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pt, ho_ten in latest_applications %}
+                                <tr>
+                                    <td class="ps-4 fw-bold text-primary">{{ ho_ten }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ pt.MaNganh }}</span></td>
+                                    <td class="fw-bold">{{ pt.Diem }}</td>
+                                    <td>
+                                        {% if pt.TrangThai.name == 'CHO_DUYET' %}
+                                            <span class="badge bg-warning text-dark">{{ pt.TrangThai.value }}</span>
+                                        {% else %}
+                                            <span class="badge bg-info">{{ pt.TrangThai.value }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group shadow-sm">
+                                            <a href="{{ url_for('admin.approve_admission', ma_ptxt=pt.MaPTXT, action='accept') }}" class="btn btn-sm btn-success" title="Chấp nhận">
+                                                <i class="bi bi-check-lg"></i>
+                                            </a>
+                                            <a href="{{ url_for('admin.approve_admission', ma_ptxt=pt.MaPTXT, action='reject') }}" class="btn btn-sm btn-danger" title="Từ chối">
+                                                <i class="bi bi-x-lg"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if not latest_applications %}
+                    <p class="text-center py-4 text-muted">Hiện tại không có hồ sơ nào cần duyệt.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNotify" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content border-0 shadow rounded-4" action="{{ url_for('admin.send_notification') }}" method="POST">
+            <div class="modal-header border-0 bg-primary text-white">
+                <h5 class="fw-bold mb-0">Gửi thông báo mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Đối tượng nhận</label>
+                    <select name="vai_tro" class="form-select border-2">
+                        <option value="THISINH">Tất cả Thí sinh</option>
+                        <option value="SINHVIEN">Tất cả Sinh viên</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nội dung thông báo</label>
+                    <textarea name="noi_dung" class="form-control border-2" rows="4" placeholder="Nhập tin nhắn tại đây..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2">GỬI THÔNG BÁO NGAY</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .card { transition: 0.3s; }
+    .list-group-item:hover { background-color: #f8f9fa; color: #dc3545; }
+    .btn-group .btn { padding: 0.25rem 0.75rem; }
+</style>
+{% endblock %}

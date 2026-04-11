@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-5 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold text-uppercase mb-0">
+            <i class="bi bi-briefcase me-2 text-primary"></i>Danh sách việc làm sinh viên
+        </h4>
+        <div class="d-flex gap-2">
+            <span class="badge bg-primary d-flex align-items-center px-3">Tổng số: {{ all_jobs|length }}</span>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">Quay lại</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark small fw-bold">
+                    <tr>
+                        <th class="ps-4">Mã SV</th>
+                        <th>Họ tên</th>
+                        <th>Công ty / Tổ chức</th>
+                        <th>Chức vụ</th>
+                        <th class="text-center">Ngày bắt đầu</th>
+                        <th class="text-center">Cập nhật cuối</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if all_jobs %}
+                        {% for job, sv in all_jobs %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-primary">{{ sv.MaSV }}</td>
+                            <td>{{ sv.HoTen }}</td>
+                            <td><span class="fw-bold">{{ job.TenCongTy }}</span></td>
+                            <td>{{ job.ChucVu or '---' }}</td>
+                            <td class="text-center">
+                                {{ job.ThoiGianBatDau.strftime('%d/%m/%Y') if job.ThoiGianBatDau else '---' }}
+                            </td>
+                            <td class="text-center small text-muted">
+                                {{ job.NgayCapNhat.strftime('%H:%M %d/%m/%Y') if job.NgayCapNhat else '---' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                Chưa có sinh viên nào khai báo việc làm.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

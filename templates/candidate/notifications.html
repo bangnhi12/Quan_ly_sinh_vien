@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-dark text-uppercase">
+            <i class="bi bi-envelope-paper-fill me-2 text-danger"></i>Hộp thư thông báo
+        </h3>
+        <a href="{{ url_for('candidate.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Quay lại Dashboard
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-uppercase small fw-bold">
+                    <tr>
+                        <th class="ps-4">Thời gian</th>
+                        <th>Nội dung thông báo</th>
+                        <th class="text-center">Người gửi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if notifications %}
+                        {% for n in notifications %}
+<tr class="{% if not n.TrangThaiDoc %}table-warning-subtle{% endif %}">
+    <td class="ps-4 text-muted small" style="width: 180px;">
+        {# Gọi trực tiếp n.NgayGui #}
+        {{ n.NgayGui.strftime('%H:%M - %d/%m/%Y') if n.NgayGui else 'N/A' }}
+    </td>
+    <td class="py-3">
+        <div class="fw-bold text-dark mb-1">
+            Thông báo hệ thống 
+            {% if not n.TrangThaiDoc %}
+                <span class="badge bg-danger ms-2" style="font-size: 0.6rem;">MỚI</span>
+            {% endif %}
+        </div>
+        {# Gọi trực tiếp n.NoiDung #}
+        <div class="text-secondary">{{ n.NoiDung }}</div>
+        
+        {% if n.ThoiGianDoc %}
+        <div class="mt-1" style="font-size: 0.7rem; color: #aaa;">
+            <i class="bi bi-check2-all"></i> Đã xem: {{ n.ThoiGianDoc.strftime('%H:%M %d/%m/%Y') }}
+        </div>
+        {% endif %}
+    </td>
+    <td class="text-center">
+        {# Gọi trực tiếp n.NguoiGui (đây là cái label Hải đặt trong Python) #}
+        <span class="badge rounded-pill bg-dark px-3">
+            {{ n.NguoiGui if n.NguoiGui else "Hệ thống" }}
+        </span>
+    </td>
+</tr>
+{% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center py-5 text-muted">
+                                <i class="bi bi-chat-left-dots fs-1 d-block mb-3"></i>
+                                Bạn chưa có thông báo nào từ hệ thống.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Highlight nhẹ cho thông báo chưa đọc */
+    .table-warning-subtle {
+        background-color: #fffdf0 !important;
+    }
+    .table tbody tr { border-bottom: 1px solid #eee; }
+    .table tbody tr:last-child { border-bottom: none; }
+    .table-hover tbody tr:hover { background-color: #fcfcfc !important; }
+</style>
+{% endblock %}

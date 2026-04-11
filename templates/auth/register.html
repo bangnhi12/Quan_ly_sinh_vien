@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow border-0 rounded-4">
+            <div class="card-body p-4 p-sm-5">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold text-danger">ĐĂNG KÝ XÉT TUYỂN</h3>
+                </div>
+
+                <form action="{{ url_for('auth.register') }}" method="POST">
+    
+
+                    <hr class="my-4 text-muted">
+
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-semibold">Tên đăng nhập</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="bi bi-person-fill text-muted"></i>
+                            </span>
+                            <input type="text" name="username" id="username" 
+                                   class="form-control border-start-0 bg-light" 
+                                   placeholder="Nhập tài khoản (viết liền, không dấu)" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-semibold">Mật khẩu</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="bi bi-lock-fill text-muted"></i>
+                            </span>
+                            <input type="password" name="password" id="password" 
+                                   class="form-control border-start-0 bg-light" 
+                                   placeholder="Nhập mật khẩu" required>
+                        </div>
+                    </div>
+
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-ptit btn-lg fw-bold shadow-sm">
+                            ĐĂNG KÝ TÀI KHOẢN
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-4">
+                    <p class="small text-muted mb-1">Bạn đã có tài khoản?</p>
+                    <a href="{{ url_for('auth.login') }}" class="text-decoration-none fw-bold text-primary">
+                        Quay lại trang Đăng nhập
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+
+    </div>
+</div>
+{% endblock %}
