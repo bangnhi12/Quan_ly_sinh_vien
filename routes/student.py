@@ -16,6 +16,7 @@ def dashboard():
 @login_required
 def view_profile():
     student = SinhVien.query.filter_by(ID_TaiKhoan=current_user.id).first()
+
     if not student:
         flash('Chưa cập nhật hồ sơ của bạn')
         return redirect(url_for('student.dashboard'))
@@ -62,7 +63,15 @@ def view_notifications():
 @student_bp.route('/report_job', methods=['GET','POST'])
 @login_required
 def report_job():
+    # 1. Tìm thông tin sinh viên trước
     student = SinhVien.query.filter_by(ID_TaiKhoan=current_user.id).first()
+
+    # 2. KIỂM TRA NGAY: Nếu không có sinh viên thì dừng luôn, không làm gì thêm
+    if not student:
+        flash('Hồ sơ sinh viên của bạn chưa tồn tại trên hệ thống. Vui lòng liên hệ Admin!', 'danger')
+        return redirect(url_for('student.dashboard'))
+
+    # 3. Sau khi chắc chắn student tồn tại, mới lấy MaSV để tìm việc làm
     job_info = ViecLamSinhVien.query.filter_by(MaSV=student.MaSV).first()
 
     if request.method == 'POST':
@@ -73,13 +82,19 @@ def report_job():
 
         ngay_bat_dau = None
         if ngay_bd_str:
-            ngay_bat_dau = datetime.strptime(ngay_bd_str, '%Y-%m-%d').date()
+            try:
+                ngay_bat_dau = datetime.strptime(ngay_bd_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass # Hoặc flash lỗi định dạng ngày tháng
+
         if job_info:
+            # Cập nhật nếu đã có
             job_info.TenCongTy = ten_cty
             job_info.ChucVu = chuc_vu
             job_info.DiaChiCongTy = dia_chi
             job_info.ThoiGianBatDau = ngay_bat_dau
         else:
+            # Thêm mới nếu chưa có
             new_job = ViecLamSinhVien(
                 MaSV = student.MaSV,
                 TenCongTy = ten_cty,
@@ -88,7 +103,10 @@ def report_job():
                 ThoiGianBatDau = ngay_bat_dau
             )
             db.session.add(new_job)
+        
         db.session.commit()
-        flash('Cập nhật thành công')
+        flash('Cập nhật thông tin việc làm thành công!', 'success')
         return redirect(url_for('student.report_job'))
-    return render_template('student/report_job.html', job=job_info)
+
+    # Truyền cả student và job_info ra để hiển thị thông tin đầy đủ
+    return render_template('student/report_job.html', student=student, job=job_info)

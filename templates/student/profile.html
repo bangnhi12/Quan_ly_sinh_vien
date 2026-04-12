@@ -3,50 +3,71 @@
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-7">
-            
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold text-uppercase mb-0">Hồ sơ sinh viên</h4>
-                <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-left"></i> Quay lại
-                </a>
-            </div>
-
+        <div class="col-md-9">
             <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-                <div class="card-body p-0">
-                    <div class="d-flex justify-content-between p-3 border-bottom bg-light">
-                        <span class="text-muted fw-bold small">MÃ SINH VIÊN</span>
-                        <span class="fw-bold text-danger">{{ student.MaSV }}</span>
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 fw-bold text-center text-uppercase">Hồ sơ sinh viên</h5>
+                </div>
+                
+                <div class="card-body p-4 p-md-5">
+                    <div class="mb-5">
+                        <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">
+                            <i class="bi bi-mortarboard-fill me-2"></i>THÔNG TIN ĐÀO TẠO
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label small text-muted fw-bold">KHOA QUẢN LÝ</label>
+                                <input type="text" class="form-control bg-light border-0" 
+                                       value="{{ student.lop.nganh.khoa.TenKhoa if student.lop and student.lop.nganh and student.lop.nganh.khoa else 'N/A' }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted fw-bold">NGÀNH HỌC</label>
+                                <input type="text" class="form-control bg-light border-0" 
+                                       value="{{ student.lop.nganh.TenNganh if student.lop and student.lop.nganh else 'N/A' }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted fw-bold">LỚP HÀNH CHÍNH</label>
+                                <input type="text" class="form-control bg-light border-0" 
+                                       value="{{ student.lop.TenLop if student.lop else 'N/A' }}" readonly>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label small text-muted fw-bold">MÃ SỐ SINH VIÊN</label>
+                                <input type="text" class="form-control bg-light border-0 fw-bold text-primary" value="{{ student.MaSV }}" readonly>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="d-flex justify-content-between p-3 border-bottom">
-                        <span class="text-muted fw-bold small">HỌ VÀ TÊN</span>
-                        <span class="fw-bold">{{ student.HoTen }}</span>
-                    </div>
-
-                    <div class="d-flex justify-content-between p-3 border-bottom">
-                        <span class="text-muted fw-bold small">LỚP HÀNH CHÍNH</span>
-                        <span>{{ student.MaLop }}</span>
-                    </div>
-
-
-
-                    <div class="d-flex justify-content-between p-3 border-bottom">
-                        <span class="text-muted fw-bold small">NGÀY SINH</span>
-                        <span>{{ student.NgaySinh.strftime('%d/%m/%Y') }}</span>
-                    </div>
-
-                    <div class="d-flex justify-content-between p-3">
-                        <span class="text-muted fw-bold small">EMAIL LIÊN HỆ</span>
-                        <span>{{ student.Email }}</span>
+                    <div>
+                        <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">
+                            <i class="bi bi-person-fill me-2"></i>THÔNG TIN CÁ NHÂN
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted fw-bold">HỌ VÀ TÊN</label>
+                                <input type="text" class="form-control bg-light border-0" value="{{ student.HoTen }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted fw-bold">EMAIL SINH VIÊN</label>
+                                <input type="text" class="form-control bg-light border-0" value="{{ student.Email }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted fw-bold">NGÀY SINH</label>
+                                <input type="text" class="form-control bg-light border-0" 
+                                       value="{{ student.NgaySinh.strftime('%d/%m/%Y') if student.NgaySinh else 'N/A' }}" readonly>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <div class="card-footer bg-light border-0 text-center py-3">
+                    <small class="text-muted italic">Dữ liệu được trích xuất từ hệ thống quản lý sinh viên nội bộ.</small>
+                </div>
+                 <div class="mb-4">
+        <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại Dashboard
+        </a>
+    </div>
             </div>
-
-            <p class="text-center text-muted small mt-4">
-                Lưu ý: Nếu thông tin chưa chính xác, vui lòng báo lại cho Ban Quản lý.
-            </p>
-
         </div>
     </div>
 </div>

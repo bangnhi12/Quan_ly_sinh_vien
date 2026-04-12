@@ -1,54 +1,188 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold text-uppercase text-danger mb-0">
-                    <i class="bi bi-mortarboard-fill me-2"></i>Nhập điểm GPA tốt nghiệp
-                </h4>
-                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm shadow-sm">
-                    <i class="bi bi-arrow-left"></i> Quay lại Dashboard
-                </a>
-            </div>
+<div class="container py-4">
+    <div class="mb-4">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm">
+            <i class="bi bi-arrow-left-circle-fill me-1"></i> Quay lại Dashboard
+        </a>
+    </div>
 
-            <div class="card shadow-sm border-0 rounded-4 p-4">
-                <form method="POST">
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Chọn sinh viên</label>
-                            <select name="ma_sv" class="form-select form-select-lg border-0 bg-light" required>
-                                <option value="">-- Danh sách sinh viên --</option>
-                                {% for sv in dssv %}
-                                    <option value="{{ sv.MaSV }}">{{ sv.MaSV }} - {{ sv.HoTen }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="col-md-12 mt-3">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Điểm GPA tích lũy (Hệ 4.0)</label>
-                            <input type="number" step="0.01" min="0" max="4" name="gpa" 
-                                   class="form-control form-control-lg border-0 bg-light" 
-                                   placeholder="Ví dụ: 3.52" required>
-                            <div class="form-text mt-2">
-                                <i class="bi bi-info-circle me-1"></i> Hệ thống sẽ tự động tính toán xếp loại dựa trên số điểm này.
-                            </div>
-                        </div>
-
-                        <div class="col-12 mt-4">
-                            <button type="submit" class="btn btn-danger w-100 py-3 fw-bold text-uppercase shadow-sm">
-                                Xác nhận và Lưu kết quả
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <div class="mt-4 p-3 bg-light rounded-3 border-start border-danger border-4">
-               
-            </div>
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-filter-circle-fill me-2"></i>LỌC DANH SÁCH SINH VIÊN</h6>
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="small fw-bold">Khoa</label>
+                    <select id="khoa-select" class="form-select border-2">
+                        <option value="">-- Chọn Khoa --</option>
+                        {% for k in khoas %}
+                        <option value="{{ k.MaKhoa }}">{{ k.TenKhoa }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="small fw-bold">Ngành</label>
+                    <select id="nganh-select" class="form-select border-2" disabled>
+                        <option value="">-- Chọn Ngành --</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="small fw-bold">Lớp</label>
+                    <select name="ma_lop" id="lop-select" class="form-select border-2" disabled required>
+                        <option value="">-- Chọn Lớp --</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                        <i class="bi bi-search me-1"></i> HIỂN THỊ
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
+
+    {% if students %}
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold text-uppercase">Danh sách lớp: {{ ma_lop_filter }}</h6>
+            <span class="badge bg-primary">{{ students|length }} Sinh viên</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Mã SV</th>
+                        <th>Họ và Tên</th>
+                        <th style="width: 180px;">GPA (Hệ 4.0)</th>
+                        <th class="text-center">Xếp loại dự kiến</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in students %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-primary">{{ s.MaSV }}</td>
+                        <td>{{ s.HoTen }}</td>
+                        <td>
+                            <input type="number" step="0.01" min="0" max="4" 
+                                   class="form-control gpa-input border-2" 
+                                   data-sv="{{ s.MaSV }}" 
+                                   value="{{ s.tot_nghiep.GPA if s.tot_nghiep else '' }}"
+                                   placeholder="0.00">
+                        </td>
+                        <td class="text-center">
+                            <span id="label-{{ s.MaSV }}" class="badge bg-light text-dark border px-3 py-2">
+                                {{ s.tot_nghiep.XepLoai.value if s.tot_nghiep else '---' }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-success btn-sm save-btn px-3" data-sv="{{ s.MaSV }}">
+                                <i class="bi bi-cloud-arrow-up-fill me-1"></i> Lưu
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+        {% if ma_lop_filter %}
+        <div class="alert alert-warning rounded-4 border-0 shadow-sm text-center">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> Lớp này hiện chưa có sinh viên nào.
+        </div>
+        {% endif %}
+    {% endif %}
 </div>
+
+<script>
+// 1. SCRIPT LỌC DỮ LIỆU ĐỘNG (FIX LỖI KHÔNG CHỌN ĐƯỢC LỚP)
+const khoaSelect = document.getElementById('khoa-select');
+const nganhSelect = document.getElementById('nganh-select');
+const lopSelect = document.getElementById('lop-select');
+
+khoaSelect.onchange = () => {
+    const maKhoa = khoaSelect.value;
+    if (!maKhoa) return;
+    
+    fetch(`{{ url_for('admin.input_grade') }}?action=get_nganh&target_id=${maKhoa}`)
+        .then(res => res.json())
+        .then(data => {
+            nganhSelect.innerHTML = '<option value="">-- Chọn Ngành --</option>';
+            data.forEach(n => {
+                nganhSelect.innerHTML += `<option value="${n.id}">${n.name}</option>`;
+            });
+            nganhSelect.disabled = false;
+            lopSelect.disabled = true;
+            lopSelect.innerHTML = '<option value="">-- Chọn Lớp --</option>';
+        });
+};
+
+nganhSelect.onchange = () => {
+    const maNganh = nganhSelect.value;
+    if (!maNganh) return;
+
+    fetch(`{{ url_for('admin.input_grade') }}?action=get_lops&target_id=${maNganh}`)
+        .then(res => res.json())
+        .then(data => {
+            lopSelect.innerHTML = '<option value="">-- Chọn Lớp --</option>';
+            if (data.length > 0) {
+                data.forEach(l => {
+                    lopSelect.innerHTML += `<option value="${l.id}">${l.name}</option>`;
+                });
+                lopSelect.disabled = false; // MỞ KHÓA Ô LỚP
+            } else {
+                lopSelect.innerHTML = '<option value="">Ngành này chưa có lớp</option>';
+                lopSelect.disabled = true;
+            }
+        });
+};
+
+// 2. TỰ ĐỘNG HIỆN XẾP LOẠI DỰ KIẾN (BADGE MÀU SẮC)
+document.querySelectorAll('.gpa-input').forEach(input => {
+    input.addEventListener('input', function() {
+        const gpa = parseFloat(this.value);
+        const label = document.getElementById(`label-${this.dataset.sv}`);
+        if (isNaN(gpa) || gpa < 0 || gpa > 4) {
+            label.innerText = "---";
+            label.className = "badge bg-light text-dark border";
+            return;
+        }
+        
+        if (gpa >= 3.6) { label.innerText = "Xuất sắc"; label.className = "badge bg-danger px-3 py-2"; }
+        else if (gpa >= 3.2) { label.innerText = "Giỏi"; label.className = "badge bg-warning text-dark px-3 py-2"; }
+        else if (gpa >= 2.5) { label.innerText = "Khá"; label.className = "badge bg-primary px-3 py-2"; }
+        else if (gpa >= 2.0) { label.innerText = "Trung bình"; label.className = "badge bg-secondary px-3 py-2"; }
+        else { label.innerText = "Yêu"; label.className = "badge bg-dark px-3 py-2"; }
+    });
+});
+
+// 3. AJAX LƯU ĐIỂM (KHÔNG LOAD LẠI TRANG)
+document.querySelectorAll('.save-btn').forEach(btn => {
+    btn.onclick = function() {
+        const ma_sv = this.dataset.sv;
+        const gpa = document.querySelector(`.gpa-input[data-sv="${ma_sv}"]`).value;
+        
+        if (!gpa) { alert("Vui lòng nhập điểm trước khi lưu!"); return; }
+
+        const formData = new FormData();
+        formData.append('ma_sv', ma_sv);
+        formData.append('gpa', gpa);
+
+        fetch("{{ url_for('admin.input_grade') }}", { 
+            method: 'POST', 
+            body: formData 
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                alert("✅ " + data.message);
+            } else {
+                alert("❌ Lỗi: " + data.message);
+            }
+        })
+        .catch(err => alert("Lỗi kết nối server!"));
+    };
+});
+</script>
 {% endblock %}
