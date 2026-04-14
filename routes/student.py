@@ -3,6 +3,7 @@ from flask_login import *
 from extensions import db
 from models import *
 from datetime import date
+from sqlalchemy.orm import joinedload
 
 student_bp = Blueprint('student', __name__)
 @student_bp.route('/dashboard')
@@ -16,11 +17,21 @@ def dashboard():
 @login_required
 def view_profile():
     student = SinhVien.query.filter_by(ID_TaiKhoan=current_user.id).first()
-
     if not student:
-        flash('Chưa cập nhật hồ sơ của bạn')
+        flash('Không tìm thấy hồ sơ sinh viên!', 'danger')
         return redirect(url_for('student.dashboard'))
-    return render_template('student/profile.html', student=student)
+    lop_info = Lop.query.filter_by(MaLop=student.MaLop).first()
+    nganh_info = None
+    khoa_info = None
+    if lop_info:
+        nganh_info = Nganh.query.filter_by(MaNganh=lop_info.MaNganh).first()
+        if nganh_info:
+            khoa_info = Khoa.query.filter_by(MaKhoa=nganh_info.MaKhoa).first()
+    return render_template('student/profile.html', 
+                           student=student, 
+                           lop=lop_info, 
+                           nganh=nganh_info, 
+                           khoa=khoa_info)
 
 @student_bp.route('/grades')
 @login_required
@@ -63,15 +74,12 @@ def view_notifications():
 @student_bp.route('/report_job', methods=['GET','POST'])
 @login_required
 def report_job():
-    # 1. Tìm thông tin sinh viên trước
     student = SinhVien.query.filter_by(ID_TaiKhoan=current_user.id).first()
 
-    # 2. KIỂM TRA NGAY: Nếu không có sinh viên thì dừng luôn, không làm gì thêm
     if not student:
         flash('Hồ sơ sinh viên của bạn chưa tồn tại trên hệ thống. Vui lòng liên hệ Admin!', 'danger')
         return redirect(url_for('student.dashboard'))
 
-    # 3. Sau khi chắc chắn student tồn tại, mới lấy MaSV để tìm việc làm
     job_info = ViecLamSinhVien.query.filter_by(MaSV=student.MaSV).first()
 
     if request.method == 'POST':
@@ -108,5 +116,4 @@ def report_job():
         flash('Cập nhật thông tin việc làm thành công!', 'success')
         return redirect(url_for('student.report_job'))
 
-    # Truyền cả student và job_info ra để hiển thị thông tin đầy đủ
     return render_template('student/report_job.html', student=student, job=job_info)

@@ -10,11 +10,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/quan_ly
 
 db.init_app(app)
 login_manager.init_app(app)
-from models import TaiKhoan # Đảm bảo đã import model TaiKhoan
-
+from models import TaiKhoan 
 @login_manager.user_loader
 def load_user(user_id):
-    # Trả về đối tượng TaiKhoan dựa trên id lưu trong session
+    
     return TaiKhoan.query.get(int(user_id))
 login_manager.login_view = 'auth.login'
 

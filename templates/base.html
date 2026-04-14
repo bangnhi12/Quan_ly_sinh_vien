@@ -80,10 +80,22 @@
                         {% endif %}
 
                         <li class="nav-item ms-lg-3">
-                            <a class="btn btn-outline-danger btn-sm" href="{{ url_for('auth.logout') }}">
-                                <i class="bi bi-box-arrow-right"></i> Đăng xuất
-                            </a>
-                        </li>
+    <li class="nav-item ms-lg-3">
+    <div class="d-flex align-items-center gap-2">
+
+        <a class="btn btn-outline-warning btn-sm fw-bold text-dark"
+           href="{{ url_for('auth.change_password') }}">
+            Đổi mật khẩu
+        </a>
+
+        <a class="btn btn-outline-danger btn-sm"
+           href="{{ url_for('auth.logout') }}">
+            <i class="bi bi-box-arrow-right"></i> Đăng xuất
+        </a>
+
+    </div>
+</li>
+</li>
                     {% else %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('auth.login') }}">Đăng nhập</a>
