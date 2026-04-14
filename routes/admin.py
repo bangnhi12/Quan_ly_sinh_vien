@@ -25,70 +25,95 @@ def dashboard():
                            latest_applications=latest_applications)
 
 @admin_bp.route('/manage_khoa', methods=['GET', 'POST'])
+@login_required
 def manage_khoa():
     if request.method == 'POST':
-        ma_khoa = request.form.get('ma_khoa').upper()
-        ten_khoa = request.form.get('ten_khoa').capitalize()
+        form_type = request.form.get('form_type')
+        
 
-        ex = Khoa.query.get(ma_khoa)
-        if ex:
-            flash('Mã Khoa đã tồn tại')
-        else:
-            new_khoa = Khoa(
-                MaKhoa = ma_khoa,
-                TenKhoa = ten_khoa
-            )
-            db.session.add(new_khoa)
-            db.session.commit()
-            flash('Thêm khoa mới thành công')
-    ds_khoa = Khoa.query.all()
-    return render_template('admin/manage_khoa.html', ds_khoa=ds_khoa)
-    
+        if form_type == 'add':
+            ma_khoa = request.form.get('ma_khoa').strip().upper()
+            ten_khoa = request.form.get('ten_khoa').strip()
+            try:
+                db.session.add(Khoa(MaKhoa=ma_khoa, TenKhoa=ten_khoa))
+                db.session.commit()
+                flash(f'Đã thêm khoa {ten_khoa} thành công!', 'success')
+            except:
+                db.session.rollback()
+                flash('Lỗi: Mã khoa đã tồn tại!', 'danger')
+
+        elif form_type == 'edit':
+            ma_khoa_old = request.form.get('ma_khoa_old')
+            khoa = Khoa.query.get(ma_khoa_old)
+            if khoa:
+                khoa.TenKhoa = request.form.get('ten_khoa').strip()
+                db.session.commit()
+                flash('Cập nhật tên khoa thành công!', 'success')
+
+        return redirect(url_for('admin.manage_khoa'))
+
+    all_khoas = Khoa.query.all()
+    return render_template('admin/manage_khoa.html', all_khoas=all_khoas)
+
+@admin_bp.route('/delete_khoa/<string:ma_khoa>')
+@login_required
+def delete_khoa(ma_khoa):
+    khoa = Khoa.query.get_or_404(ma_khoa)
+    try:
+        db.session.delete(khoa)
+        db.session.commit()
+        flash('Đã xóa khoa thành công!', 'success')
+    except:
+        db.session.rollback()
+        flash('Không thể xóa vì khoa này đang có ngành và lớp trực thuộc!', 'danger')
+    return redirect(url_for('admin.manage_khoa'))
+
 @admin_bp.route('/manage_nganh', methods=['GET', 'POST'])
+@login_required
 def manage_nganh():
     if request.method == 'POST':
-        ma_nganh = request.form.get('ma_nganh').upper()
-        ten_nganh = request.form.get('ten_nganh').capitalize()
-        ma_khoa = request.form.get('ma_khoa')
+        form_type = request.form.get('form_type')
+        
 
-        new_nganh = Nganh(
-            MaNganh = ma_nganh,
-            TenNganh = ten_nganh,
-            MaKhoa = ma_khoa
-        )
-        db.session.add(new_nganh)
-        db.session.commit()
-        flash('Đã thêm ngành thành công')
-    ds_nganh = Nganh.query.all()
-    ds_khoa = Khoa.query.all()
-    return render_template('admin/manage_nganh.html',ds_nganh=ds_nganh,ds_khoa=ds_khoa)
+        if form_type == 'add':
+            ma_nganh = request.form.get('ma_nganh').strip().upper()
+            ten_nganh = request.form.get('ten_nganh').strip()
+            ma_khoa = request.form.get('ma_khoa')
+            try:
+                db.session.add(Nganh(MaNganh=ma_nganh, TenNganh=ten_nganh, MaKhoa=ma_khoa))
+                db.session.commit()
+                flash(f'Đã thêm ngành {ten_nganh} thành công!', 'success')
+            except:
+                db.session.rollback()
+                flash('Lỗi: Mã ngành đã tồn tại hoặc dữ liệu không hợp lệ!', 'danger')
 
-from sqlalchemy import inspect # Thêm cái này ở đầu file để kiểm tra tồn tại
+        elif form_type == 'edit':
+            ma_nganh_old = request.form.get('ma_nganh_old')
+            nganh = Nganh.query.get(ma_nganh_old)
+            if nganh:
+                nganh.TenNganh = request.form.get('ten_nganh').strip()
+                nganh.MaKhoa = request.form.get('ma_khoa')
+                db.session.commit()
+                flash('Cập nhật ngành thành công!', 'success')
 
-@admin_bp.route('/delete/<string:type>/<string:id>')
+        return redirect(url_for('admin.manage_nganh'))
+
+    all_nganhs = Nganh.query.all()
+    khoas = Khoa.query.all()
+    return render_template('admin/manage_nganh.html', all_nganhs=all_nganhs, khoas=khoas)
+
+@admin_bp.route('/delete_nganh/<string:ma_nganh>')
 @login_required
-def delete_item(type, id):
+def delete_nganh(ma_nganh):
+    nganh = Nganh.query.get_or_404(ma_nganh)
     try:
-        if type == 'khoa':
-            has_nganh = Nganh.query.filter_by(MaKhoa=id).first()
-            if has_nganh:
-                flash(f'Không thể xóa Khoa {id} vì vẫn còn Ngành học bên trong. Hãy xóa các Ngành trước!', 'danger')
-                return redirect(request.referrer)
-            Khoa.query.filter_by(MaKhoa=id).delete()
-        elif type == 'nganh':
-            has_lop = Lop.query.filter_by(MaNganh=id).first()
-            if has_lop:
-                flash(f'Không thể xóa Ngành {id} vì đã có Lớp học đăng ký ngành này!', 'danger')
-                return redirect(request.referrer)
-            Nganh.query.filter_by(MaNganh=id).delete()
+        db.session.delete(nganh)
         db.session.commit()
-        flash('Đã xóa dữ liệu thành công!', 'success')
-    except Exception as e:
+        flash('Đã xóa ngành thành công!', 'success')
+    except:
         db.session.rollback()
-        print(f"Lỗi xóa: {e}")
-        flash('Lỗi hệ thống: Không thể xóa dữ liệu này.', 'danger')
-
-    return redirect(request.referrer)
+        flash('Không thể xóa vì ngành này đang có lớp trực thuộc!', 'danger')
+    return redirect(url_for('admin.manage_nganh'))
 
 @admin_bp.route('/review_applications')
 @login_required
@@ -122,6 +147,23 @@ def approve_admission(ma_ptxt, action):
 @admin_bp.route('/input_grade', methods=['GET', 'POST'])
 @login_required
 def input_grade():
+    
+    action = request.args.get('action')
+    target_id = request.args.get('target_id')
+
+    if action == 'get_nganh':
+        nganhs = Nganh.query.filter_by(MaKhoa=target_id).all()
+        return jsonify([{'id':n.MaNganh, 'name': n.TenNganh} for n in nganhs])
+    
+    if action == 'get_lops':
+        lop = Lop.query.filter_by(MaNganh=target_id).all()
+        return jsonify([{'id': n.MaLop, 'name': n.TenLop} for n in lop])
+    
+    ma_lop_filter = request.args.get('ma_lop')
+    students = []
+    if ma_lop_filter:
+        students = SinhVien.query.filter_by(MaLop=ma_lop_filter).all()
+
     if request.method == 'POST':
         ma_sv = request.form.get('ma_sv')
         gpa = float(request.form.get('gpa'))
@@ -137,23 +179,20 @@ def input_grade():
         else:
             xeploai = XepLoaiSV.YEU
         
-        tn = TotNghiep.query.filter_by(MaSV=ma_sv).first()
         try:
-            if tn:
-                tn.GPA = gpa
-                tn.XepLoai = xeploai
+            ket_qua = TotNghiep.query.get(ma_sv)
+            if ket_qua:
+                ket_qua.GPA = gpa
+                ket_qua.XepLoai = xeploai
             else:
-                new_tn = TotNghiep(MaSV=ma_sv, GPA=gpa, XepLoai = xeploai)
-                db.session.add(new_tn)
+                db.session.add(TotNghiep(MaSV=ma_sv, GPA=gpa, XepLoai=xeploai))
             db.session.commit()
-            flash('Đã cập nhật điểm GPA cho sinh viên thành công!')
-        except Exception as e:
-            db.session.rollback()
-            flash('GPA nằm trong khoảng 0.0 đến 4.0')
+            return jsonify({'status': 'success', 'message': f'Đã lưu điểm cho {ma_sv}'})
+        except:
+            return jsonify({'status': 'error', 'message': 'Lỗi database'}), 500
 
-        return redirect(url_for('admin.input_grade'))
-    dssv = SinhVien.query.all()
-    return render_template('admin/input_grade.html', dssv=dssv)
+    khoas = Khoa.query.all()
+    return render_template('admin/input_grade.html', khoas=khoas, students=students, ma_lop_filter=ma_lop_filter)
 
 @admin_bp.route('/graduation_list')
 @login_required
@@ -204,3 +243,141 @@ def view_student_jobs():
                 .all()
     
     return render_template('admin/student_jobs.html', all_jobs=all_jobs)
+
+@admin_bp.route('/create_student', methods=['GET', 'POST'])
+@login_required
+def create_student():
+
+    action = request.args.get('action')
+    target_id = request.args.get('target_id')
+
+    if action == 'get_nganh':
+        nganhs = Nganh.query.filter_by(MaKhoa=target_id).all()
+        return jsonify([{'id': n.MaNganh, 'name': n.TenNganh} for n in nganhs])
+    
+    if action == 'get_lops':
+        lops = Lop.query.filter_by(MaNganh=target_id).all()
+        return jsonify([{'id': l.MaLop, 'name': l.TenLop} for l in lops])
+    
+    if request.method == 'POST':
+        ma_sv = request.form.get('ma_sv')
+        ho_ten = request.form.get('ho_ten')
+        email = request.form.get('email')
+        ngay_sinh = datetime.strptime(request.form.get('ngay_sinh'), '%Y-%m-%d').date()
+        ma_lop = request.form.get('ma_lop')
+
+        ten_dang_nhap = ma_sv
+        mat_khau = ma_sv
+        try:
+            new_user = TaiKhoan(
+                ten_dang_nhap = ten_dang_nhap,
+                mat_khau = mat_khau,
+                vai_tro = VaiTro.SINHVIEN 
+            )
+            db.session.add(new_user)
+            db.session.flush()
+
+            new_sv = SinhVien(
+                MaSV = ma_sv,
+                HoTen = ho_ten,
+                NgaySinh = ngay_sinh,
+                Email = email,
+                MaLop = ma_lop,
+                ID_TaiKhoan = new_user.id
+            )
+            db.session.add(new_sv)
+            db.session.commit()
+            flash('Đã tạo thành công sinh viên')
+            return redirect(url_for('admin.create_student'))
+        except Exception as e:
+            db.session.rollback()
+            flash("Lỗi: {str(e)}")
+    khoas = Khoa.query.all()
+    return render_template('admin/create_student.html', khoas=khoas)
+
+@admin_bp.route('/manage_lops', methods = ['GET', 'POST'])
+@login_required
+def manage_lops():
+    if request.args.get('action') == 'get_nganh':
+        ma_khoa = request.args.get('ma_khoa')
+        nganhs = Nganh.query.filter_by(MaKhoa=ma_khoa).all()
+        return jsonify([{'id': n.MaNganh, 'name': n.TenNganh} for n in nganhs])
+    
+    if request.method == 'POST':
+        form_type = request.form.get('form_type')
+
+        if form_type == 'add':
+            ma_lop = request.form.get('ma_lop').strip().upper()
+            ten_lop = request.form.get('ten_lop').strip()
+            ma_nganh = request.form.get('ma_nganh')
+
+            try:
+                db.session.add(Lop(MaLop=ma_lop, TenLop=ten_lop, MaNganh=ma_nganh))
+                db.session.commit()
+                flash('Đã thêm lớp')
+            except:
+                db.session.rollback()
+                flash('Lỗi')
+
+        elif form_type =='edit':
+            ma_lop_old = request.form.get('ma_lop_old')
+            lop = Lop.query.get(ma_lop_old)
+            if lop: 
+                lop.TenLop = request.form.get('ten_lop').strip()
+                lop.MaNganh = request.form.get('ma_nganh')
+                db.session.commit()
+                flash('Cập nhật thành công')
+
+    return render_template('admin/manage_lops.html',
+                        khoas = Khoa.query.all(),
+                        all_lops = Lop.query.all())
+
+
+@admin_bp.route('/delete_lop/<string:ma_lop>')
+@login_required
+def delete_lop(ma_lop):
+    lop = Lop.query.get_or_404(ma_lop)
+    try:
+        db.session.delete(lop)
+        db.session.commit()
+        flash('Đã xóa lớp thành công')
+    except:
+        db.session.rollback()
+        flash('Không thể xóa vì có sinh viên đang học')
+    return redirect(url_for('admin.manage_lops'))
+
+@admin_bp.route('/manage_view')
+@login_required
+def manage_view():
+    level = request.args.get('level', 'khoa') 
+    parent_id = request.args.get('parent_id')
+    
+    data = []
+    title = ""
+    back_url = None
+
+    if level == 'khoa':
+        data = Khoa.query.all()
+        title = "DANH SÁCH KHOA"
+    
+    elif level == 'nganh':
+        data = Nganh.query.filter_by(MaKhoa=parent_id).all()
+        title = f"NGÀNH THUỘC KHOA: {parent_id}"
+        back_url = url_for('admin.manage_view', level='khoa')
+        
+    elif level == 'lop':
+        data = Lop.query.filter_by(MaNganh=parent_id).all()
+        title = f"LỚP THUỘC NGÀNH: {parent_id}"
+
+        nganh = Nganh.query.get(parent_id)
+        back_url = url_for('admin.manage_view', level='nganh', parent_id=nganh.MaKhoa)
+        
+    elif level == 'sv':
+        data = SinhVien.query.filter_by(MaLop=parent_id).all()
+        title = f"SINH VIÊN LỚP: {parent_id}"
+        lop = Lop.query.get(parent_id)
+        back_url = url_for('admin.manage_view', level='lop', parent_id=lop.MaNganh)
+
+    return render_template('admin/manage_view.html', 
+                           data=data, level=level, title=title, 
+                           back_url=back_url, parent_id=parent_id)

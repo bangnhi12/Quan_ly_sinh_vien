@@ -3,6 +3,7 @@ from flask_login import *
 from extensions import db
 from models import *
 from datetime import date
+from sqlalchemy.orm import joinedload
 
 student_bp = Blueprint('student', __name__)
 @student_bp.route('/dashboard')
@@ -17,9 +18,20 @@ def dashboard():
 def view_profile():
     student = SinhVien.query.filter_by(ID_TaiKhoan=current_user.id).first()
     if not student:
-        flash('Chưa cập nhật hồ sơ của bạn')
+        flash('Không tìm thấy hồ sơ sinh viên!', 'danger')
         return redirect(url_for('student.dashboard'))
-    return render_template('student/profile.html', student=student)
+    lop_info = Lop.query.filter_by(MaLop=student.MaLop).first()
+    nganh_info = None
+    khoa_info = None
+    if lop_info:
+        nganh_info = Nganh.query.filter_by(MaNganh=lop_info.MaNganh).first()
+        if nganh_info:
+            khoa_info = Khoa.query.filter_by(MaKhoa=nganh_info.MaKhoa).first()
+    return render_template('student/profile.html', 
+                           student=student, 
+                           lop=lop_info, 
+                           nganh=nganh_info, 
+                           khoa=khoa_info)
 
 @student_bp.route('/grades')
 @login_required
@@ -63,6 +75,11 @@ def view_notifications():
 @login_required
 def report_job():
     student = SinhVien.query.filter_by(ID_TaiKhoan=current_user.id).first()
+
+    if not student:
+        flash('Hồ sơ sinh viên của bạn chưa tồn tại trên hệ thống. Vui lòng liên hệ Admin!', 'danger')
+        return redirect(url_for('student.dashboard'))
+
     job_info = ViecLamSinhVien.query.filter_by(MaSV=student.MaSV).first()
 
     if request.method == 'POST':
@@ -73,13 +90,19 @@ def report_job():
 
         ngay_bat_dau = None
         if ngay_bd_str:
-            ngay_bat_dau = datetime.strptime(ngay_bd_str, '%Y-%m-%d').date()
+            try:
+                ngay_bat_dau = datetime.strptime(ngay_bd_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass # Hoặc flash lỗi định dạng ngày tháng
+
         if job_info:
+            # Cập nhật nếu đã có
             job_info.TenCongTy = ten_cty
             job_info.ChucVu = chuc_vu
             job_info.DiaChiCongTy = dia_chi
             job_info.ThoiGianBatDau = ngay_bat_dau
         else:
+            # Thêm mới nếu chưa có
             new_job = ViecLamSinhVien(
                 MaSV = student.MaSV,
                 TenCongTy = ten_cty,
@@ -88,7 +111,9 @@ def report_job():
                 ThoiGianBatDau = ngay_bat_dau
             )
             db.session.add(new_job)
+        
         db.session.commit()
-        flash('Cập nhật thành công')
+        flash('Cập nhật thông tin việc làm thành công!', 'success')
         return redirect(url_for('student.report_job'))
-    return render_template('student/report_job.html', job=job_info)
+
+    return render_template('student/report_job.html', student=student, job=job_info)

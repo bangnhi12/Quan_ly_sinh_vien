@@ -79,7 +79,7 @@ def view_results():
 
     if not hso:
         flash('Bạn chưa có hồ sơ trên hệ thống')
-        return redirect(url_for('candidate.profile'))
+        return redirect(url_for('candidate.update_profile'))
     results = PT_XetTuyen.query.filter_by(MaHSO=hso.MaHSO).all()
     
     return render_template('candidate/results.html', results=results)

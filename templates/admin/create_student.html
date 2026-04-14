@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-dark text-white p-3 text-center">
+                    <h5 class="mb-0 fw-bold">THÊM MỚI SINH VIÊN</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Khoa</label>
+                                <select id="khoa_select" class="form-select border-2">
+                                    <option value="">-- Chọn Khoa --</option>
+                                    {% for k in khoas %}
+                                    <option value="{{ k.MaKhoa }}">{{ k.TenKhoa }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Ngành</label>
+                                <select id="nganh_select" class="form-select border-2" disabled>
+                                    <option value="">-- Chọn Ngành --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Lớp</label>
+                                <select name="ma_lop" id="lop_select" class="form-select border-2" required disabled>
+                                    <option value="">-- Chọn Lớp --</option>
+                                </select>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Mã Sinh Viên (Tên đăng nhập)</label>
+                                <input type="text" name="ma_sv" class="form-control border-2" required placeholder="B23DCAT...">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Họ và Tên</label>
+                                <input type="text" name="ho_ten" class="form-control border-2" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Email</label>
+                                <input type="email" name="email" class="form-control border-2" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Ngày sinh</label>
+                                <input type="date" name="ngay_sinh" class="form-control border-2" required>
+                            </div>
+                        </div>
+
+            
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 mt-4 fw-bold shadow-sm">
+                            TẠO SINH VIÊN & CẤP TÀI KHOẢN
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container py-4">
+    <div class="mb-4">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại Dashboard
+        </a>
+    </div>
+<script>
+function updateSelect(action, targetId, selectId, label) {
+    let select = document.getElementById(selectId);
+    select.innerHTML = '<option value="">Đang tải...</option>';
+    fetch(`{{ url_for('admin.create_student') }}?action=${action}&target_id=${targetId}`)
+        .then(res => res.json())
+        .then(data => {
+            select.innerHTML = `<option value="">-- Chọn ${label} --</option>`;
+            data.forEach(item => {
+                select.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+            });
+            select.disabled = false;
+        });
+}
+
+document.getElementById('khoa_select').addEventListener('change', function() {
+    if(this.value) updateSelect('get_nganh', this.value, 'nganh_select', 'Ngành');
+});
+
+document.getElementById('nganh_select').addEventListener('change', function() {
+    if(this.value) updateSelect('get_lops', this.value, 'lop_select', 'Lớp');
+});
+</script>
+{% endblock %}

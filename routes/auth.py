@@ -10,8 +10,12 @@ def register():
     if request.method == 'POST':
         name = request.form.get('username')
         password = request.form.get('password')
-
+        existing_user = TaiKhoan.query.filter_by(ten_dang_nhap=name).first()
+        if existing_user:
+            flash('Tên đăng nhập đã tồn tại')
+            return redirect(url_for('auth.register'))
         new_tk = TaiKhoan(ten_dang_nhap=name, mat_khau=password, vai_tro=VaiTro.THISINH)
+
         db.session.add(new_tk)
         db.session.commit()
 

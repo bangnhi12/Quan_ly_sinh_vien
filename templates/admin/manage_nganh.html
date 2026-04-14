@@ -1,80 +1,111 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold text-dark"><i class="bi bi-diagram-3-fill me-2"></i>QUẢN LÝ NGÀNH ĐÀO TẠO</h3>
-        <button class="btn btn-danger shadow-sm" data-bs-toggle="modal" data-bs-target="#addNganhModal">
-            <i class="bi bi-plus-circle me-2"></i>Thêm Ngành mới
-        </button>
+    <div class="mb-4">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại Dashboard
+        </a>
     </div>
 
-    <div class="card shadow-sm border-0 rounded-4">
-        <div class="card-body p-0">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-4">Mã Ngành</th>
-                        <th>Tên Ngành</th>
-                        <th>Thuộc Khoa</th>
-                        <th class="text-center">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for n in ds_nganh %}
-                    <tr>
-                        <td class="ps-4 fw-bold">{{ n.MaNganh }}</td>
-                        <td>{{ n.TenNganh }}</td>
-                        <td><span class="badge bg-info text-dark">{{ n.khoa.TenKhoa }}</span></td>
-                        <td class="text-center">
-                            <a href="{{ url_for('admin.delete_item', type='nganh', id=n.MaNganh) }}" 
-                               class="btn btn-sm btn-outline-danger" 
-                               onclick="return confirm('Xóa ngành này sẽ ảnh hưởng đến Lớp và Thí sinh. Bạn chắc chứ?')">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                        </td>
-                    </tr>
-                       {% endfor %}
-                </tbody>
-            </table>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-journal-plus me-2"></i>THÊM NGÀNH MỚI</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="form_type" value="add">
+                        <div class="mb-3">
+                            <label class="small fw-bold">Thuộc Khoa</label>
+                            <select name="ma_khoa" class="form-select border-2" required>
+                                <option value="">-- Chọn Khoa --</option>
+                                {% for k in khoas %}
+                                <option value="{{ k.MaKhoa }}">{{ k.TenKhoa }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold">Mã Ngành</label>
+                            <input type="text" name="ma_nganh" class="form-control border-2" placeholder="Ví dụ: CNTT01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold">Tên Ngành</label>
+                            <input type="text" name="ten_nganh" class="form-control border-2" placeholder="Ví dụ: Kỹ thuật phần mềm" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm">LƯU NGÀNH</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="ps-4">Mã Ngành</th>
+                                <th>Tên Ngành</th>
+                                <th>Thuộc Khoa</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for n in all_nganhs %}
+                            <tr>
+                                <td class="ps-4 fw-bold text-primary">{{ n.MaNganh }}</td>
+                                <td>{{ n.TenNganh }}</td>
+                                <td><span class="badge bg-info text-dark">{{ n.khoa.TenKhoa }}</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editNganh{{ n.MaNganh }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <a href="{{ url_for('admin.delete_nganh', ma_nganh=n.MaNganh) }}" 
+                                       class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa ngành này?')">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-     <div class="mt-4">
-                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-link text-decoration-none text-muted">
-                    <i class="bi bi-arrow-left me-1"></i> Quay lại Dashboard
-                </a>
-    </div>
-            
-<div class="modal fade" id="addNganhModal" tabindex="-1">
+
+{% for n in all_nganhs %}
+<div class="modal fade" id="editNganh{{ n.MaNganh }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form class="modal-content" method="POST">
-            <div class="modal-header">
-                <h5 class="fw-bold">Thêm Ngành Đào Tạo</h5>
+        <form method="POST" class="modal-content">
+            <input type="hidden" name="form_type" value="edit">
+            <input type="hidden" name="ma_nganh_old" value="{{ n.MaNganh }}">
+            <div class="modal-header bg-warning">
+                <h5 class="fw-bold mb-0">Sửa Ngành: {{ n.MaNganh }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body text-start">
                 <div class="mb-3">
-                    <label class="form-label small fw-bold">Mã Ngành (VD: DCCN)</label>
-                    <input type="text" name="ma_nganh" class="form-control" maxlength="4" required>
+                    <label class="small fw-bold">Tên Ngành mới</label>
+                    <input type="text" name="ten_nganh" class="form-control border-2" value="{{ n.TenNganh }}" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label small fw-bold">Tên Ngành</label>
-                    <input type="text" name="ten_nganh" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Chọn Khoa chủ quản</label>
-                    <select name="ma_khoa" class="form-select" required>
-                        <option value="" disabled selected>-- Chọn Khoa --</option>
-                        {% for k in ds_khoa %}
-                        <option value="{{ k.MaKhoa }}">{{ k.TenKhoa }}</option>
+                    <label class="small fw-bold">Đổi Khoa quản lý</label>
+                    <select name="ma_khoa" class="form-select border-2" required>
+                        {% for k in khoas %}
+                        <option value="{{ k.MaKhoa }}" {% if k.MaKhoa == n.MaKhoa %}selected{% endif %}>{{ k.TenKhoa }}</option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="submit" class="btn btn-danger w-100">Xác nhận lưu</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-warning fw-bold">CẬP NHẬT</button>
             </div>
         </form>
     </div>
 </div>
+{% endfor %}
 {% endblock %}

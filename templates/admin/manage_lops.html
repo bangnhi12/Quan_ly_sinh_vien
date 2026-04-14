@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle me-2"></i>THÊM LỚP MỚI</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="form_type" value="add">
+                        
+                        <div class="mb-3">
+                            <label class="small fw-bold">Khoa</label>
+                            <select id="khoa-add" class="form-select border-2 khoa-ajax" data-target="nganh-add">
+                                <option value="">-- Chọn Khoa --</option>
+                                {% for k in khoas %}
+                                <option value="{{ k.MaKhoa }}">{{ k.TenKhoa }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="small fw-bold">Ngành</label>
+                            <select name="ma_nganh" id="nganh-add" class="form-select border-2" required disabled>
+                                <option value="">-- Chọn Khoa trước --</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="small fw-bold">Mã Lớp</label>
+                            <input type="text" name="ma_lop" class="form-control" placeholder="Ví dụ: D23CQAT01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold">Tên Lớp</label>
+                            <input type="text" name="ten_lop" class="form-control" placeholder="Ví dụ: An toàn thông tin 1" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">LƯU LỚP</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Mã Lớp</th>
+                                <th>Tên Lớp</th>
+                                <th>Ngành</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lop in all_lops %}
+                            <tr>
+                                <td class="fw-bold">{{ lop.MaLop }}</td>
+                                <td>{{ lop.TenLop }}</td>
+                                <td>{{ lop.nganh.TenNganh }}</td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ lop.MaLop }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <a href="{{ url_for('admin.delete_lop', ma_lop=lop.MaLop) }}" 
+                                       class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa lớp này?')">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for lop in all_lops %}
+<div class="modal fade" id="editModal{{ lop.MaLop }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" class="modal-content text-start">
+            <input type="hidden" name="form_type" value="edit">
+            <input type="hidden" name="ma_lop_old" value="{{ lop.MaLop }}">
+            
+            <div class="modal-header bg-warning">
+                <h5 class="mb-0 fw-bold text-dark">Sửa Lớp: {{ lop.MaLop }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="small fw-bold text-dark">Tên Lớp mới</label>
+                    <input type="text" name="ten_lop" class="form-control" value="{{ lop.TenLop }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="small fw-bold text-primary">Thay đổi Khoa (Nếu cần)</label>
+                    <select class="form-select border-2 khoa-ajax" data-target="nganh-edit-{{ lop.MaLop }}">
+                        <option value="">-- Giữ nguyên khoa hiện tại --</option>
+                        {% for k in khoas %}
+                        <option value="{{ k.MaKhoa }}">{{ k.TenKhoa }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="small fw-bold text-dark">Ngành</label>
+                    <select name="ma_nganh" id="nganh-edit-{{ lop.MaLop }}" class="form-select border-2" required>
+                        <option value="{{ lop.MaNganh }}">{{ lop.nganh.TenNganh }} (Hiện tại)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-warning fw-bold text-dark">CẬP NHẬT</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('change', function(e) {
+    if (e.target && e.target.classList.contains('khoa-ajax')) {
+        const maKhoa = e.target.value;
+        const targetId = e.target.getAttribute('data-target');
+        const nganhSelect = document.getElementById(targetId);
+        
+        if (!maKhoa) return;
+
+        nganhSelect.innerHTML = '<option value="">Đang tải...</option>';
+        nganhSelect.disabled = false;
+
+        const url = "{{ url_for('admin.manage_lops') }}?action=get_nganh&ma_khoa=" + maKhoa;
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                nganhSelect.innerHTML = '<option value="">-- Chọn Ngành --</option>';
+                data.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.textContent = item.name;
+                    nganhSelect.appendChild(opt);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                nganhSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+            });
+    }
+});
+</script>
+{% endblock %}
