@@ -96,6 +96,7 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th class="ps-4">Thí sinh</th>
+                                    <th>Phương thức</th>
                                     <th>Ngành</th>
                                     <th>Điểm</th>
                                     <th>Trạng thái</th>
@@ -106,6 +107,9 @@
                                 {% for pt, ho_ten in latest_applications %}
                                 <tr>
                                     <td class="ps-4 fw-bold text-primary">{{ ho_ten }}</td>
+                                    <td> <span class="text-secondary small">
+                                <i class="bi bi-info-circle me-1"></i>{{ pt.PhuongThuc }}
+                            </span></td>
                                     <td><span class="badge bg-light text-dark border">{{ pt.MaNganh }}</span></td>
                                     <td class="fw-bold">{{ pt.Diem }}</td>
                                     <td>

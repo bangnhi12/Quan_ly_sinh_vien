@@ -40,7 +40,6 @@ def login():
             
         flash('Tài khoản hoặc mật khẩu không chính xác!')
     return render_template('auth/login.html')
-
 @auth_bp.route('/change_password', methods=['GET', 'POST'])
 @login_required
 def change_password():
@@ -52,11 +51,15 @@ def change_password():
             current_user.mat_khau = new_pw
             db.session.commit()
             flash('Đổi mật khẩu thành công')
-            return redirect(url_for('candidate.dashboard'))
+            if current_user.vai_tro == VaiTro.ADMIN:
+                return redirect(url_for('admin.dashboard'))
+            elif current_user.vai_tro == VaiTro.SINHVIEN:
+                return redirect(url_for('student.dashboard'))
+            else:
+                return redirect(url_for('candidate.dashboard'))
         else:
             flash('Mật khẩu cũ không đúng! Nhập lại')
     return render_template('auth/change_password.html')
-
 @auth_bp.route('/logout')
 @login_required
 def logout():

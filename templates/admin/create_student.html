@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="container py-4">
+    <div class="mb">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại Dashboard
+        </a>
+    </div>
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -64,12 +70,7 @@
         </div>
     </div>
 </div>
-<div class="container py-4">
-    <div class="mb-4">
-        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-            <i class="bi bi-arrow-left me-1"></i> Quay lại Dashboard
-        </a>
-    </div>
+
 <script>
 function updateSelect(action, targetId, selectId, label) {
     let select = document.getElementById(selectId);

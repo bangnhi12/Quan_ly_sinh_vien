@@ -15,7 +15,8 @@ def dashboard():
 
     latest_applications = db.session.query(PT_XetTuyen, HSO_XETTUYEN.HoTen)\
         .join(HSO_XETTUYEN, PT_XetTuyen.MaHSO == HSO_XETTUYEN.MaHSO)\
-        .order_by(PT_XetTuyen.MaPTXT.desc())\
+        .filter(PT_XetTuyen.TrangThai == TrangThaiXT.CHO_DUYET)\
+        .order_by(HSO_XETTUYEN.HoTen.asc())\
         .limit(5).all()
 
     return render_template('admin/dashboard.html', 
@@ -127,7 +128,7 @@ def view_all_applications():
     if filter_status:
         query = query.filter(PT_XetTuyen.TrangThai == filter_status)
     
-    applications = query.order_by(PT_XetTuyen.MaPTXT.desc()).all()
+    applications = query.order_by(HSO_XETTUYEN.HoTen.asc()).all()
     return render_template('admin/view_applications.html', applications=applications)
 
 
@@ -147,7 +148,6 @@ def approve_admission(ma_ptxt, action):
 @admin_bp.route('/input_grade', methods=['GET', 'POST'])
 @login_required
 def input_grade():
-    
     action = request.args.get('action')
     target_id = request.args.get('target_id')
 
@@ -158,38 +158,45 @@ def input_grade():
     if action == 'get_lops':
         lop = Lop.query.filter_by(MaNganh=target_id).all()
         return jsonify([{'id': n.MaLop, 'name': n.TenLop} for n in lop])
-    
+
     ma_lop_filter = request.args.get('ma_lop')
     students = []
     if ma_lop_filter:
-        students = SinhVien.query.filter_by(MaLop=ma_lop_filter).all()
+ 
+        sv_da_co_diem = db.session.query(TotNghiep.MaSV).all()
+        list_ma_sv_da_co_diem = [r[0] for r in sv_da_co_diem]
+        students = SinhVien.query.filter(
+            SinhVien.MaLop == ma_lop_filter,
+            ~SinhVien.MaSV.in_(list_ma_sv_da_co_diem)
+        ).all()
 
     if request.method == 'POST':
-        ma_sv = request.form.get('ma_sv')
-        gpa = float(request.form.get('gpa'))
-
-        if gpa >= 3.6:
-            xeploai = XepLoaiSV.XUAT_SAC
-        elif gpa >= 3.2:
-            xeploai = XepLoaiSV.GIOI
-        elif gpa >= 2.5:
-            xeploai = XepLoaiSV.KHA
-        elif gpa >= 2.0:
-            xeploai = XepLoaiSV.TRUNG_BINH
-        else:
-            xeploai = XepLoaiSV.YEU
-        
         try:
-            ket_qua = TotNghiep.query.get(ma_sv)
+            ma_sv = request.form.get('ma_sv')
+            gpa_raw = request.form.get('gpa')
+            if not gpa_raw:
+                return jsonify({'status': 'error', 'message': 'Chưa nhập điểm'}), 400
+            
+            gpa = float(gpa_raw)
+
+            if gpa >= 3.6: xeploai = XepLoaiSV.XUAT_SAC
+            elif gpa >= 3.2: xeploai = XepLoaiSV.GIOI
+            elif gpa >= 2.5: xeploai = XepLoaiSV.KHA
+            elif gpa >= 2.0: xeploai = XepLoaiSV.TRUNG_BINH
+            else: xeploai = XepLoaiSV.YEU
+
+            ket_qua = db.session.get(TotNghiep, ma_sv)
             if ket_qua:
                 ket_qua.GPA = gpa
                 ket_qua.XepLoai = xeploai
             else:
                 db.session.add(TotNghiep(MaSV=ma_sv, GPA=gpa, XepLoai=xeploai))
+            
             db.session.commit()
             return jsonify({'status': 'success', 'message': f'Đã lưu điểm cho {ma_sv}'})
-        except:
-            return jsonify({'status': 'error', 'message': 'Lỗi database'}), 500
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)}), 500
 
     khoas = Khoa.query.all()
     return render_template('admin/input_grade.html', khoas=khoas, students=students, ma_lop_filter=ma_lop_filter)
@@ -197,11 +204,36 @@ def input_grade():
 @admin_bp.route('/graduation_list')
 @login_required
 def graduation_list():
-    results = db.session.query(TotNghiep, SinhVien)\
-                .join(SinhVien, TotNghiep.MaSV == SinhVien.MaSV)\
-                .all()
-    return render_template('admin/graduation_list.html', results=results)
+    ma_khoa = request.args.get('ma_khoa')
+    ma_nganh = request.args.get('ma_nganh')
+    ma_lop = request.args.get('ma_lop')
+    xep_loai = request.args.get('xep_loai')
 
+    students = []
+    if ma_khoa or ma_nganh or ma_lop or xep_loai:
+        query = db.session.query(SinhVien)
+        if ma_lop:
+            query = query.filter(SinhVien.MaLop == ma_lop)
+        elif ma_nganh:
+            query = query.join(Lop, SinhVien.MaLop == ma_lop)
+        elif ma_khoa:
+            query = query.join(Lop, SinhVien.MaLop == Lop.MaLop)\
+                        .join(Nganh, Lop.MaNganh == Nganh.MaNganh)\
+                        .filter(Nganh.MaKhoa == ma_khoa)
+        
+        if xep_loai and xep_loai != 'all':
+            try:
+                target_enum = XepLoaiSV[xep_loai]
+                query = query.join(TotNghiep, SinhVien.MaSV == TotNghiep.MaSV)\
+                                .filter(TotNghiep.XepLoai == target_enum)
+            except KeyError:
+                pass
+        students = query.all()
+    khoas = Khoa.query.all()
+    return render_template('admin/graduation_list.html',
+                           students = students,
+                           khoas = khoas,
+                           xep_loai_enum = XepLoaiSV)
 @admin_bp.route('/send-notification', methods=['POST'])
 @login_required
 def send_notification():  

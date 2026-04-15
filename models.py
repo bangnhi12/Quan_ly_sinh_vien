@@ -99,6 +99,7 @@ class SinhVien(db.Model):
     MaLop: Mapped[str] = mapped_column(ForeignKey("Lop.MaLop"))
     MaHSO: Mapped[int] = mapped_column(ForeignKey("HSO_XETTUYEN.MaHSO"), nullable=True)
     tai_khoan = relationship("TaiKhoan", back_populates="sinh_vien")
+    tot_nghiep = relationship("TotNghiep", backref="sinh_vien", uselist=False)
 
 # --- 4. Các bảng Nghiệp vụ (Xét tuyển, Kết quả, Tốt nghiệp) ---
 class PT_XetTuyen(db.Model):
