@@ -1,4 +1,5 @@
-from flask import Flask
+from flask import Flask, redirect, url_for
+from flask_login import current_user
 from extensions import db, login_manager
 from flask import redirect, url_for
 from flask_login import current_user
@@ -33,6 +34,7 @@ def index():
             return redirect(url_for('student.dashboard'))
         return redirect(url_for('candidate.dashboard'))
     return redirect(url_for('auth.login'))
+
 with app.app_context():
     db.create_all()
 
