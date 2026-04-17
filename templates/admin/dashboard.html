@@ -46,7 +46,7 @@
         </div>
     </div>
 
-    <div class="row g-4">
+    <div class="row g-4" id="hop">
         <div class="col-md-4">
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header bg-white fw-bold border-0 pt-3">QUẢN LÝ HỆ THỐNG</div>
@@ -78,6 +78,9 @@
                         </a>
                         <a href="{{url_for('admin.manage_view')}}" class="list-group-item list-group-item-action border-0 py-3">
                             <i class="bi bi-book me-2"></i> Tìm kiếm 
+                        </a>
+                        <a href="{{url_for('admin.quan_ly_tin_nhan')}}" class="list-group-item list-group-item-action border-0 py-3">
+                            <i class="bi bi-book me-2"></i> Chat 
                         </a>
                         <button type="button" class="list-group-item list-group-item-action border-0 py-3 text-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalNotify">
                             <i class="bi bi-bell me-2"></i> Gửi thông báo hệ thống
@@ -171,6 +174,10 @@
 </div>
 
 <style>
+    body{
+        background: rgb(240, 240, 242);
+    }
+    
     .card { transition: 0.3s; }
     .list-group-item:hover { background-color: #f8f9fa; color: #dc3545; }
     .btn-group .btn { padding: 0.25rem 0.75rem; }

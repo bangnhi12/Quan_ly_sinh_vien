@@ -142,9 +142,17 @@ CREATE TABLE ViecLamSinhVien (
     NgayCapNhat DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_vlsv_sv FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV)
 );
+-- 15. Bảng Tin nhắn (Thêm mới theo yêu cầu của bạn)
+CREATE TABLE TinNhan (
+    MaTinNhan INT AUTO_INCREMENT PRIMARY KEY,
+    ID_NguoiGui INT NOT NULL,
+    ID_NguoiNhan INT  NULL,
+    NoiDung TEXT NOT NULL,
+    ThoiGianGui DATETIME DEFAULT CURRENT_TIMESTAMP,
+    DaDoc BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (ID_NguoiGui) REFERENCES TaiKhoan(ID_TaiKhoan),
+    FOREIGN KEY (ID_NguoiNhan) REFERENCES TaiKhoan(ID_TaiKhoan)
+);
 
--- =============================================
--- SAMPLE DEFAULT ADMIN ACCOUNT
--- =============================================
-INSERT INTO TaiKhoan (TenDangNhap, MatKhau, VaiTro)
-VALUES ('admin', '123456', 'admin');
+UPDATE TinNhan SET ThoiGianGui = NOW() WHERE ThoiGianGui IS NULL OR ThoiGianGui = 0;
+

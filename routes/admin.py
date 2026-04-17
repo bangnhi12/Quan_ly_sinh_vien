@@ -1,5 +1,6 @@
 from flask import *
 from flask_login import *
+from sqlalchemy import exists
 from extensions import db
 from models import *
 from datetime import date
@@ -413,3 +414,81 @@ def manage_view():
     return render_template('admin/manage_view.html', 
                            data=data, level=level, title=title, 
                            back_url=back_url, parent_id=parent_id)
+
+
+
+from sqlalchemy import or_, and_, exists
+
+@admin_bp.route('/tin_nhan', defaults={'user_id': None}, methods=['GET', 'POST'])
+@admin_bp.route('/tin_nhan/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def quan_ly_tin_nhan(user_id):
+    if current_user.vai_tro != VaiTro.ADMIN:
+        return redirect(url_for('index'))
+
+    role_filter = request.args.get('role')
+
+    # 1. Lấy danh sách người đã nhắn tin
+    contact_query = TaiKhoan.query.filter(exists().where(
+        or_(TinNhan.ID_NguoiGui == TaiKhoan.id, TinNhan.ID_NguoiNhan == TaiKhoan.id)
+    ))
+
+    if role_filter == 'thisinh':
+        contact_query = contact_query.filter(TaiKhoan.vai_tro == VaiTro.THISINH)
+    elif role_filter == 'sinhvien':
+        contact_query = contact_query.filter(TaiKhoan.vai_tro == VaiTro.SINHVIEN)
+
+    contacts_raw = contact_query.distinct().all()
+
+    # 2. QUAN TRỌNG: Gán unread_count cho từng contact
+    contacts = []
+    for c in contacts_raw:
+        # Đếm tin nhắn từ người này gửi lên hệ thống (None) mà chưa đọc
+        c.unread_count = TinNhan.query.filter(
+            TinNhan.ID_NguoiGui == c.id,
+            TinNhan.ID_NguoiNhan == None,
+            TinNhan.DaDoc == False
+        ).count()
+        contacts.append(c)
+
+    current_chat = None
+    messages = []
+
+    if user_id:
+        current_chat = TaiKhoan.query.get_or_404(user_id)
+
+        # 3. Đánh dấu đã đọc khi Admin nhấn vào chat
+        TinNhan.query.filter_by(
+            ID_NguoiGui=user_id, 
+            ID_NguoiNhan=None, 
+            DaDoc=False
+        ).update({"DaDoc": True})
+        db.session.commit()
+
+        if request.method == 'POST':
+            noi_dung = request.form.get('message')
+            if noi_dung and noi_dung.strip():
+                new_msg = TinNhan(
+                    ID_NguoiGui=current_user.id,
+                    ID_NguoiNhan=user_id,
+                    NoiDung=noi_dung.strip()
+                )
+                db.session.add(new_msg)
+                db.session.commit()
+                return redirect(url_for('admin.quan_ly_tin_nhan', user_id=user_id, role=role_filter))
+
+        # 4. Lấy lịch sử chat
+        messages = TinNhan.query.filter(
+            or_(
+                and_(TinNhan.ID_NguoiGui == user_id, TinNhan.ID_NguoiNhan == None),
+                and_(TinNhan.ID_NguoiNhan == user_id)
+            )
+        ).order_by(TinNhan.ThoiGianGui.asc()).all()
+
+    return render_template(
+        'admin/tin_nhan.html',
+        contacts=contacts,
+        messages=messages,
+        current_chat=current_chat,
+        active_role=role_filter
+    )

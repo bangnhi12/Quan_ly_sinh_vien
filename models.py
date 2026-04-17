@@ -1,10 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Integer, Numeric, Date, ForeignKey, Enum, DateTime, Boolean, CheckConstraint
+from sqlalchemy import String, Integer, Numeric, Date, ForeignKey, Enum, DateTime, Boolean, CheckConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime, date
 import enum
 from flask_login import UserMixin
 from extensions import db
+from sqlalchemy import DateTime
 class Base(DeclarativeBase):
     pass
 
@@ -154,3 +155,15 @@ class ViecLamSinhVien(db.Model):
     NgayCapNhat = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     # Quan hệ
     sinh_vien = db.relationship("SinhVien", backref=db.backref("viec_lam", uselist=False))
+
+class TinNhan(db.Model):
+    __tablename__ = "TinNhan"
+    MaTinNhan: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ID_NguoiGui: Mapped[int] = mapped_column(ForeignKey("TaiKhoan.ID_TaiKhoan"),nullable=False)
+    ID_NguoiNhan: Mapped[int] = mapped_column(ForeignKey("TaiKhoan.ID_TaiKhoan"))
+    NoiDung: Mapped[str] = mapped_column(String(100), nullable=False)
+    ThoiGianGui: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), default=datetime.now)
+    DaDoc: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    sender = relationship("TaiKhoan", foreign_keys=[ID_NguoiGui])
+    receiver = relationship("TaiKhoan", foreign_keys=[ID_NguoiNhan])

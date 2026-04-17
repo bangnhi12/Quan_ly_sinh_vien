@@ -117,3 +117,31 @@ def report_job():
         return redirect(url_for('student.report_job'))
 
     return render_template('student/report_job.html', student=student, job=job_info)
+
+@student_bp.route('/chat_sinhvien', methods=['GET', 'POST'])
+@login_required
+def chat_sinhvien():
+    if request.method == 'POST':
+        noi_dung = request.form.get('message')
+        if noi_dung and noi_dung.strip():
+            moi_tin = TinNhan(
+                ID_NguoiGui=current_user.id,
+                ID_NguoiNhan=None,  
+                NoiDung=noi_dung.strip()
+            )
+            db.session.add(moi_tin)
+            
+            try:
+                db.session.commit()
+                print(f"Đã lưu tin nhắn từ ID: {current_user.id}")
+            except Exception as e:
+                db.session.rollback()
+                print("LỖI DATABASE:", e)
+                
+        return redirect(url_for('student.chat_sinhvien'))
+    messages = TinNhan.query.filter(
+        (TinNhan.ID_NguoiGui == current_user.id) | 
+        (TinNhan.ID_NguoiNhan == current_user.id)
+    ).order_by(TinNhan.ThoiGianGui.asc()).all()
+
+    return render_template('student/chat_sinhvien.html', messages=messages)

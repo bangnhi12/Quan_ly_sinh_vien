@@ -117,3 +117,31 @@ def view_notifications():
         db.session.commit()
 
     return render_template('candidate/notifications.html', notifications=notifications)
+
+@candidate_bp.route('/chat_thisinh', methods=['GET', 'POST'])
+@login_required
+def chat_thisinh():
+    if request.method == 'POST':
+        noi_dung = request.form.get('message')
+        if noi_dung and noi_dung.strip():
+            moi_tin = TinNhan(
+                ID_NguoiGui=current_user.id,
+                ID_NguoiNhan=None,  
+                NoiDung=noi_dung.strip()
+            )
+            db.session.add(moi_tin)
+            
+            try:
+                db.session.commit()
+                print(f"Đã lưu tin nhắn từ ID: {current_user.id}")
+            except Exception as e:
+                db.session.rollback()
+                print("LỖI DATABASE:", e)
+                
+        return redirect(url_for('candidate.chat_thisinh'))
+    messages = TinNhan.query.filter(
+        (TinNhan.ID_NguoiGui == current_user.id) | 
+        (TinNhan.ID_NguoiNhan == current_user.id)
+    ).order_by(TinNhan.ThoiGianGui.asc()).all()
+
+    return render_template('candidate/chat_thisinh.html', messages=messages)

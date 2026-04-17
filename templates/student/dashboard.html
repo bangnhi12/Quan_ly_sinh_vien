@@ -41,12 +41,21 @@
                 <span class="fw-bold">HỘP THƯ THÔNG BÁO</span>
             </a>
         </div>
+        
+        <div class="col-md-5">
+        <a href="{{ url_for('student.chat_sinhvien') }}" 
+        class="btn btn-outline-primary w-100 py-4 shadow-sm rounded-4 border-2">
+            <i class="bi bi-chat-dots-fill fs-3 d-block mb-2"></i>
+            <span class="fw-bold">CHAT HỖ TRỢ</span>
+        </a>
+</div>
 
         <div class="col-md-10 mt-4">
             <a href="{{ url_for('auth.logout') }}" class="btn btn-danger w-100 py-3 fw-bold rounded-4 shadow-sm">
                 <i class="bi bi-box-arrow-right me-2"></i> ĐĂNG XUẤT TÀI KHOẢN
             </a>
         </div>
+        
 
     </div>
 </div>
