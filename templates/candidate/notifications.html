@@ -24,31 +24,29 @@
                 <tbody>
                     {% if notifications %}
                         {% for n in notifications %}
-<tr class="{% if not n.TrangThaiDoc %}table-warning-subtle{% endif %}">
+<tr class="{% if not n.receipt.TrangThaiDoc %}table-warning-subtle{% endif %}" style="cursor: pointer;"
+    onclick="window.location='{{ url_for('candidate.notification_detail', receipt_id=n.receipt.MaTBNN) }}'">
     <td class="ps-4 text-muted small" style="width: 180px;">
-        {# Gọi trực tiếp n.NgayGui #}
-        {{ n.NgayGui.strftime('%H:%M - %d/%m/%Y') if n.NgayGui else 'N/A' }}
+        {{ n.content.NgayGui.strftime('%H:%M - %d/%m/%Y') if n.content.NgayGui else 'N/A' }}
     </td>
     <td class="py-3">
         <div class="fw-bold text-dark mb-1">
             Thông báo hệ thống 
-            {% if not n.TrangThaiDoc %}
+            {% if not n.receipt.TrangThaiDoc %}
                 <span class="badge bg-danger ms-2" style="font-size: 0.6rem;">MỚI</span>
             {% endif %}
         </div>
-        {# Gọi trực tiếp n.NoiDung #}
-        <div class="text-secondary">{{ n.NoiDung }}</div>
+        <div class="text-secondary">{{ n.content.NoiDung[:140] }}{% if n.content.NoiDung|length > 140 %}...{% endif %}</div>
         
-        {% if n.ThoiGianDoc %}
+        {% if n.receipt.ThoiGianDoc %}
         <div class="mt-1" style="font-size: 0.7rem; color: #aaa;">
-            <i class="bi bi-check2-all"></i> Đã xem: {{ n.ThoiGianDoc.strftime('%H:%M %d/%m/%Y') }}
+            <i class="bi bi-check2-all"></i> Đã xem: {{ n.receipt.ThoiGianDoc.strftime('%H:%M %d/%m/%Y') }}
         </div>
         {% endif %}
     </td>
     <td class="text-center">
-        {# Gọi trực tiếp n.NguoiGui (đây là cái label Hải đặt trong Python) #}
         <span class="badge rounded-pill bg-dark px-3">
-            {{ n.NguoiGui if n.NguoiGui else "Hệ thống" }}
+            {{ n.sender_name }}
         </span>
     </td>
 </tr>

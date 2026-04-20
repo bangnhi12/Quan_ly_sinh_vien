@@ -57,6 +57,7 @@ class Nganh(db.Model):
     TenNganh: Mapped[str] = mapped_column(String(100), nullable=False)
     MaKhoa: Mapped[str] = mapped_column(ForeignKey("Khoa.MaKhoa"))
     khoa = relationship("Khoa", back_populates="nganhs")
+    mon_hocs = relationship("NganhMonHoc", back_populates="nganh", cascade="all, delete-orphan")
 
 class Lop(db.Model):
     __tablename__ = "Lop"
@@ -70,7 +71,16 @@ class MonHoc(db.Model):
     MaMH: Mapped[str] = mapped_column(String(7), primary_key=True)
     TenMH: Mapped[str] = mapped_column(String(100), nullable=False)
     SoTinChi: Mapped[int] = mapped_column(Integer, nullable=False)
+    nganhs = relationship("NganhMonHoc", back_populates="mon_hoc", cascade="all, delete-orphan")
     __table_args__ = (CheckConstraint('SoTinChi > 0'),)
+
+class NganhMonHoc(db.Model):
+    __tablename__ = "Nganh_MonHoc"
+    MaNganh: Mapped[str] = mapped_column(ForeignKey("Nganh.MaNganh"), primary_key=True)
+    MaMH: Mapped[str] = mapped_column(ForeignKey("MonHoc.MaMH"), primary_key=True)
+
+    nganh = relationship("Nganh", back_populates="mon_hocs")
+    mon_hoc = relationship("MonHoc", back_populates="nganhs")
 
 # --- 3. Các bảng Người dùng (QuanTri, SinhVien, HSO_XetTuyen) ---
 class QuanTri(db.Model):

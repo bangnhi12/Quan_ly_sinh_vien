@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold text-uppercase mb-0">Chi tiết thông báo</h4>
+                <a href="{{ url_for('candidate.view_notifications') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Quay lại hộp thư
+                </a>
+            </div>
+
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="badge rounded-pill bg-dark px-3 fw-normal">{{ sender_name }}</span>
+                        <div class="text-end small text-muted">
+                            <div>Gửi lúc: {{ notification.NgayGui.strftime('%H:%M - %d/%m/%Y') if notification.NgayGui else 'N/A' }}</div>
+                            {% if receipt.ThoiGianDoc %}
+                            <div>Đã đọc: {{ receipt.ThoiGianDoc.strftime('%H:%M - %d/%m/%Y') }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-dark mb-3">Thông báo từ Ban Quản lý</h5>
+                    <p class="text-secondary mb-0" style="line-height: 1.8; white-space: pre-line;">
+                        {{ notification.NoiDung }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

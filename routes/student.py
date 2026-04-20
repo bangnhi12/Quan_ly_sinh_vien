@@ -2,7 +2,7 @@ from flask import *
 from flask_login import *
 from extensions import db
 from models import *
-from datetime import date
+from datetime import date, datetime
 from sqlalchemy.orm import joinedload
 
 student_bp = Blueprint('student', __name__)
@@ -33,6 +33,34 @@ def view_profile():
                            nganh=nganh_info, 
                            khoa=khoa_info)
 
+def _convert_10_to_4_scale(score_10):
+    if score_10 >= 8.5:
+        return 4.0
+    if score_10 >= 8.0:
+        return 3.5
+    if score_10 >= 7.0:
+        return 3.0
+    if score_10 >= 6.5:
+        return 2.5
+    if score_10 >= 5.5:
+        return 2.0
+    if score_10 >= 5.0:
+        return 1.5
+    if score_10 >= 4.0:
+        return 1.0
+    return 0.0
+
+def _xep_loai_from_cpa(cpa):
+    if cpa >= 3.6:
+        return "Xuất sắc"
+    if cpa >= 3.2:
+        return "Giỏi"
+    if cpa >= 2.5:
+        return "Khá"
+    if cpa >= 2.0:
+        return "Trung bình"
+    return "Yếu"
+
 @student_bp.route('/grades')
 @login_required
 def view_grades():
@@ -41,11 +69,54 @@ def view_grades():
     if not student:
         flash('Chưa cập nhật hồ sơ của bạn')
         return redirect(url_for('student.dashboard'))
-    
-    graduation_info = TotNghiep.query.filter_by(MaSV=student.MaSV).first()
+
+    lop_info = Lop.query.get(student.MaLop) if student.MaLop else None
+    nganh_info = Nganh.query.get(lop_info.MaNganh) if lop_info else None
+
+    curriculum_subjects = []
+    if nganh_info:
+        curriculum_subjects = db.session.query(MonHoc)\
+            .join(NganhMonHoc, NganhMonHoc.MaMH == MonHoc.MaMH)\
+            .filter(NganhMonHoc.MaNganh == nganh_info.MaNganh)\
+            .order_by(MonHoc.MaMH.asc())\
+            .all()
+
+    grades = KQ_HocTap.query.filter_by(MaSV=student.MaSV).all()
+    grade_map = {g.MaMH: float(g.Diem) for g in grades}
+
+    subject_results = []
+    total_credits = sum(int(mon.SoTinChi) for mon in curriculum_subjects)
+    graded_subjects = 0
+    graded_credits = 0
+    weighted_total = 0.0
+
+    for mon in curriculum_subjects:
+        score = grade_map.get(mon.MaMH)
+        if score is not None:
+            graded_subjects += 1
+            graded_credits += int(mon.SoTinChi)
+            weighted_total += _convert_10_to_4_scale(score) * int(mon.SoTinChi)
+
+        subject_results.append({
+            'MaMH': mon.MaMH,
+            'TenMH': mon.TenMH,
+            'SoTinChi': int(mon.SoTinChi),
+            'Diem': score
+        })
+
+    cpa = round(weighted_total / graded_credits, 2) if graded_credits > 0 else None
+    xep_loai = _xep_loai_from_cpa(cpa) if cpa is not None else '---'
+
     return render_template('student/grades.html',
                            student=student,
-                           gpa_info=graduation_info)
+                           lop=lop_info,
+                           nganh=nganh_info,
+                           subject_results=subject_results,
+                           cpa=cpa,
+                           xep_loai=xep_loai,
+                           total_subjects=len(curriculum_subjects),
+                           graded_subjects=graded_subjects,
+                           total_credits=total_credits)
 @student_bp.route('/notifications')
 @login_required
 def view_notifications():
@@ -63,13 +134,31 @@ def view_notifications():
             })
     notifications_list.sort(key=lambda x: x['content'].NgayGui, reverse=True)
 
-    unread = TB_NguoiNhan.query.filter_by(ID_TaiKhoan=current_user.id, TrangThaiDoc=False).all()
-    if unread:
-        for u in unread:
-            u.TrangThaiDoc = True
+    return render_template('student/notifications.html', notifications=notifications_list)
+
+@student_bp.route('/notifications/<int:receipt_id>')
+@login_required
+def notification_detail(receipt_id):
+    receipt = TB_NguoiNhan.query.filter_by(MaTBNN=receipt_id, ID_TaiKhoan=current_user.id).first_or_404()
+    notification = ThongBao.query.get_or_404(receipt.MaTB)
+
+    sender_name = "Hệ thống"
+    if notification.MaAdmin:
+        sender = QuanTri.query.get(notification.MaAdmin)
+        if sender and sender.HoTen:
+            sender_name = sender.HoTen
+
+    if not receipt.TrangThaiDoc:
+        receipt.TrangThaiDoc = True
+        receipt.ThoiGianDoc = datetime.now()
         db.session.commit()
 
-    return render_template('student/notifications.html', notifications=notifications_list)
+    return render_template(
+        'student/notification_detail.html',
+        receipt=receipt,
+        notification=notification,
+        sender_name=sender_name
+    )
 
 @student_bp.route('/report_job', methods=['GET','POST'])
 @login_required

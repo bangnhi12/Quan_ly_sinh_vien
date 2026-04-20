@@ -7,9 +7,6 @@
             <i class="bi bi-journal-check me-2"></i>Danh sách kết quả tốt nghiệp
         </h4>
         <div>
-            <a href="{{ url_for('admin.input_grade') }}" class="btn btn-danger btn-sm shadow-sm me-2">
-                <i class="bi bi-plus-lg"></i> Nhập điểm mới
-            </a>
             <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm shadow-sm">
                 Quay lại
             </a>
@@ -25,7 +22,6 @@
                         <th>Họ tên sinh viên</th>
                         <th class="text-center">GPA (4.0)</th>
                         <th class="text-center">Xếp loại</th>
-                        <th class="text-end pe-4">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -47,19 +43,11 @@
                                     <span class="badge bg-secondary">Trung bình/Yếu</span>
                                 {% endif %}
                             </td>
-                            <td class="text-end pe-4">
-                                <a href="#" class="btn btn-sm btn-outline-info" title="Sửa">
-                                    <i class="bi bi-pencil-square"></i>
-                                </a>
-                                <button class="btn btn-sm btn-outline-danger ms-1" title="Xóa">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </td>
                         </tr>
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
+                            <td colspan="4" class="text-center py-5 text-muted">
                                 Chưa có sinh viên nào có kết quả tốt nghiệp.
                             </td>
                         </tr>

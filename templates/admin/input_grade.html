@@ -13,22 +13,22 @@
             <form method="GET" class="row g-3">
                 <div class="col-md-3">
                     <label class="small fw-bold">Khoa</label>
-                    <select id="khoa-select" class="form-select border-2">
+                    <select id="khoa-select" name="ma_khoa" class="form-select border-2">
                         <option value="">-- Chọn Khoa --</option>
                         {% for k in khoas %}
-                        <option value="{{ k.MaKhoa }}">{{ k.TenKhoa }}</option>
+                        <option value="{{ k.MaKhoa }}" {% if ma_khoa_filter == k.MaKhoa %}selected{% endif %}>{{ k.TenKhoa }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label class="small fw-bold">Ngành</label>
-                    <select id="nganh-select" class="form-select border-2" disabled>
+                    <select id="nganh-select" name="ma_nganh" class="form-select border-2" {% if not ma_khoa_filter %}disabled{% endif %}>
                         <option value="">-- Chọn Ngành --</option>
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label class="small fw-bold">Lớp</label>
-                    <select name="ma_lop" id="lop-select" class="form-select border-2" disabled required>
+                    <select name="ma_lop" id="lop-select" class="form-select border-2" {% if not ma_nganh_filter %}disabled{% endif %}>
                         <option value="">-- Chọn Lớp --</option>
                     </select>
                 </div>
@@ -44,7 +44,7 @@
     {% if students %}
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
         <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
-            <h6 class="mb-0 fw-bold text-uppercase">Danh sách lớp: {{ ma_lop_filter }}</h6>
+            <h6 class="mb-0 fw-bold text-uppercase">{{ filter_label if filter_label else 'Danh sách sinh viên' }}</h6>
             <span class="badge bg-primary">{{ students|length }} Sinh viên</span>
         </div>
         <div class="table-responsive">
@@ -53,32 +53,34 @@
                     <tr>
                         <th class="ps-4">Mã SV</th>
                         <th>Họ và Tên</th>
-                        <th style="width: 180px;">GPA (Hệ 4.0)</th>
-                        <th class="text-center">Xếp loại dự kiến</th>
-                        <th class="text-center">Thao tác</th>
+                        <th class="text-center">CPA tự động (hệ 4)</th>
+                        <th class="text-center">Tiến độ tín chỉ</th>
+                        <th class="text-center">Trạng thái</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for s in students %}
-                    <tr>
-                        <td class="ps-4 fw-bold text-primary">{{ s.MaSV }}</td>
-                        <td>{{ s.HoTen }}</td>
+                    {% for item in students %}
+                    <tr class="cursor-pointer" data-bs-toggle="modal" data-bs-target="#scoreModal{{ item.student.MaSV }}" style="cursor: pointer;">
+                        <td class="ps-4 fw-bold text-primary">{{ item.student.MaSV }}</td>
                         <td>
-                            <input type="number" step="0.01" min="0" max="4" 
-                                   class="form-control gpa-input border-2" 
-                                   data-sv="{{ s.MaSV }}" 
-                                   value="{{ s.tot_nghiep.GPA if s.tot_nghiep else '' }}"
-                                   placeholder="0.00">
+                            {{ item.student.HoTen }}
+                        </td>
+                        <td class="text-center fw-bold">
+                            {{ "%.2f"|format(item.cpa) if item.cpa is not none else '---' }}
                         </td>
                         <td class="text-center">
-                            <span id="label-{{ s.MaSV }}" class="badge bg-light text-dark border px-3 py-2">
-                                {{ s.tot_nghiep.XepLoai.value if s.tot_nghiep else '---' }}
+                            <span class="badge bg-light text-dark border">
+                                {{ item.earned_credits }}/{{ item.total_credits }} tín chỉ
                             </span>
                         </td>
                         <td class="text-center">
-                            <button class="btn btn-success btn-sm save-btn px-3" data-sv="{{ s.MaSV }}">
-                                <i class="bi bi-cloud-arrow-up-fill me-1"></i> Lưu
-                            </button>
+                            {% if item.eligible_for_graduation %}
+                                <span class="badge bg-success">{{ item.status_text }}</span>
+                            {% elif item.status_text == 'Ngành chưa cấu hình môn học' or item.status_text == 'Chưa có lớp' %}
+                                <span class="badge bg-danger">{{ item.status_text }}</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">{{ item.status_text }}</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -87,102 +89,173 @@
         </div>
     </div>
     {% else %}
-        {% if ma_lop_filter %}
+        {% if has_filter %}
         <div class="alert alert-warning rounded-4 border-0 shadow-sm text-center">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> Lớp này hiện chưa có sinh viên nào.
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> Không có sinh viên nào theo bộ lọc đã chọn.
         </div>
         {% endif %}
     {% endif %}
 </div>
 
+{% for item in students %}
+<div class="modal fade" id="scoreModal{{ item.student.MaSV }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <form method="POST" class="modal-content">
+            <input type="hidden" name="ma_sv" value="{{ item.student.MaSV }}">
+            <input type="hidden" name="ma_khoa_filter" value="{{ ma_khoa_filter }}">
+            <input type="hidden" name="ma_nganh_filter" value="{{ ma_nganh_filter }}">
+            <input type="hidden" name="ma_lop_filter" value="{{ ma_lop_filter }}">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">
+                    Nhập điểm chi tiết - {{ item.student.MaSV }} ({{ item.student.HoTen }})
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-md-4">
+                        <div class="p-2 bg-light rounded border small">
+                            <strong>CPA hiện tại:</strong> {{ "%.2f"|format(item.cpa) if item.cpa is not none else '---' }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-2 bg-light rounded border small">
+                            <strong>Tín chỉ đạt:</strong> {{ item.earned_credits }}/{{ item.total_credits }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-2 bg-light rounded border small">
+                            <strong>Xếp loại tạm tính:</strong> {{ item.xep_loai }}
+                        </div>
+                    </div>
+                </div>
+
+                {% if item.subjects %}
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mã môn</th>
+                                <th>Tên môn học</th>
+                                <th class="text-center">Số tín chỉ</th>
+                                <th style="width: 170px;" class="text-center">Điểm (hệ 10)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in item.subjects %}
+                            <tr>
+                                <td class="fw-bold">{{ sub.MaMH }}</td>
+                                <td>{{ sub.TenMH }}</td>
+                                <td class="text-center">{{ sub.SoTinChi }}</td>
+                                <td>
+                                    <input
+                                        type="number"
+                                        name="diem_{{ sub.MaMH }}"
+                                        step="0.01"
+                                        min="0"
+                                        max="10"
+                                        class="form-control form-control-sm"
+                                        value="{{ "%.2f"|format(sub.Diem) if sub.Diem is not none else '' }}"
+                                        placeholder="0 - 10">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-danger mb-0">
+                    Ngành của sinh viên chưa có danh sách môn học. Vui lòng cấu hình trong mục "Quản lý môn học".
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                {% if item.subjects %}
+                <button type="submit" class="btn btn-primary fw-bold">Lưu điểm chi tiết</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
 <script>
-// 1. SCRIPT LỌC DỮ LIỆU ĐỘNG (FIX LỖI KHÔNG CHỌN ĐƯỢC LỚP)
 const khoaSelect = document.getElementById('khoa-select');
 const nganhSelect = document.getElementById('nganh-select');
 const lopSelect = document.getElementById('lop-select');
+const selectedNganh = {{ (ma_nganh_filter or '')|tojson }};
+const selectedLop = {{ (ma_lop_filter or '')|tojson }};
 
-khoaSelect.onchange = () => {
-    const maKhoa = khoaSelect.value;
-    if (!maKhoa) return;
-    
-    fetch(`{{ url_for('admin.input_grade') }}?action=get_nganh&target_id=${maKhoa}`)
+async function loadNganh(maKhoa, selectedValue = '') {
+    return fetch(`{{ url_for('admin.input_grade') }}?action=get_nganh&target_id=${maKhoa}`)
         .then(res => res.json())
         .then(data => {
             nganhSelect.innerHTML = '<option value="">-- Chọn Ngành --</option>';
             data.forEach(n => {
-                nganhSelect.innerHTML += `<option value="${n.id}">${n.name}</option>`;
+                const selected = n.id === selectedValue ? 'selected' : '';
+                nganhSelect.innerHTML += `<option value="${n.id}" ${selected}>${n.name}</option>`;
             });
             nganhSelect.disabled = false;
-            lopSelect.disabled = true;
-            lopSelect.innerHTML = '<option value="">-- Chọn Lớp --</option>';
         });
+}
+
+async function loadLops(maNganh, selectedValue = '') {
+    return fetch(`{{ url_for('admin.input_grade') }}?action=get_lops&target_id=${maNganh}`)
+        .then(res => res.json())
+        .then(data => {
+            lopSelect.innerHTML = '<option value="">-- Chọn Lớp --</option>';
+            data.forEach(l => {
+                const selected = l.id === selectedValue ? 'selected' : '';
+                lopSelect.innerHTML += `<option value="${l.id}" ${selected}>${l.name}</option>`;
+            });
+            lopSelect.disabled = false;
+        });
+}
+
+khoaSelect.onchange = () => {
+    const maKhoa = khoaSelect.value;
+
+    if (!maKhoa) {
+        nganhSelect.disabled = true;
+        nganhSelect.innerHTML = '<option value="">-- Chọn Ngành --</option>';
+        lopSelect.disabled = true;
+        lopSelect.innerHTML = '<option value="">-- Chọn Lớp --</option>';
+        return;
+    }
+
+    loadNganh(maKhoa);
+    lopSelect.disabled = true;
+    lopSelect.innerHTML = '<option value="">-- Chọn Lớp --</option>';
 };
 
 nganhSelect.onchange = () => {
     const maNganh = nganhSelect.value;
-    if (!maNganh) return;
-
-    fetch(`{{ url_for('admin.input_grade') }}?action=get_lops&target_id=${maNganh}`)
-        .then(res => res.json())
-        .then(data => {
-            lopSelect.innerHTML = '<option value="">-- Chọn Lớp --</option>';
-            if (data.length > 0) {
-                data.forEach(l => {
-                    lopSelect.innerHTML += `<option value="${l.id}">${l.name}</option>`;
-                });
-                lopSelect.disabled = false; // MỞ KHÓA Ô LỚP
-            } else {
-                lopSelect.innerHTML = '<option value="">Ngành này chưa có lớp</option>';
-                lopSelect.disabled = true;
-            }
-        });
+    if (!maNganh) {
+        lopSelect.disabled = true;
+        lopSelect.innerHTML = '<option value="">-- Chọn Lớp --</option>';
+        return;
+    }
+    loadLops(maNganh);
 };
 
-// 2. TỰ ĐỘNG HIỆN XẾP LOẠI DỰ KIẾN (BADGE MÀU SẮC)
-document.querySelectorAll('.gpa-input').forEach(input => {
-    input.addEventListener('input', function() {
-        const gpa = parseFloat(this.value);
-        const label = document.getElementById(`label-${this.dataset.sv}`);
-        if (isNaN(gpa) || gpa < 0 || gpa > 4) {
-            label.innerText = "---";
-            label.className = "badge bg-light text-dark border";
-            return;
-        }
-        
-        if (gpa >= 3.6) { label.innerText = "Xuất sắc"; label.className = "badge bg-danger px-3 py-2"; }
-        else if (gpa >= 3.2) { label.innerText = "Giỏi"; label.className = "badge bg-warning text-dark px-3 py-2"; }
-        else if (gpa >= 2.5) { label.innerText = "Khá"; label.className = "badge bg-primary px-3 py-2"; }
-        else if (gpa >= 2.0) { label.innerText = "Trung bình"; label.className = "badge bg-secondary px-3 py-2"; }
-        else { label.innerText = "Yêu"; label.className = "badge bg-dark px-3 py-2"; }
-    });
-});
-
-// 3. AJAX LƯU ĐIỂM (KHÔNG LOAD LẠI TRANG)
-document.querySelectorAll('.save-btn').forEach(btn => {
-    btn.onclick = function() {
-        const ma_sv = this.dataset.sv;
-        const gpa = document.querySelector(`.gpa-input[data-sv="${ma_sv}"]`).value;
-        
-        if (!gpa) { alert("Vui lòng nhập điểm trước khi lưu!"); return; }
-
-        const formData = new FormData();
-        formData.append('ma_sv', ma_sv);
-        formData.append('gpa', gpa);
-
-        fetch("{{ url_for('admin.input_grade') }}", { 
-            method: 'POST', 
-            body: formData 
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === 'success') {
-                alert("✅ " + data.message);
-            } else {
-                alert("❌ Lỗi: " + data.message);
+window.addEventListener('DOMContentLoaded', () => {
+    const currentKhoa = khoaSelect.value;
+    if (currentKhoa) {
+        loadNganh(currentKhoa, selectedNganh).then(() => {
+            if (selectedNganh) {
+                loadLops(selectedNganh, selectedLop);
             }
-        })
-        .catch(err => alert("Lỗi kết nối server!"));
-    };
+        });
+    } else {
+        nganhSelect.disabled = true;
+        lopSelect.disabled = true;
+        nganhSelect.innerHTML = '<option value="">-- Chọn Ngành --</option>';
+        lopSelect.innerHTML = '<option value="">-- Chọn Lớp --</option>';
+    }
 });
 </script>
 {% endblock %}

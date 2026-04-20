@@ -3,6 +3,7 @@ from flask_login import *
 from extensions import db
 from models import *
 import uuid
+from datetime import datetime
 
 from routes import student
 
@@ -87,33 +88,49 @@ def view_results():
 @candidate_bp.route('/notifications')
 @login_required
 def view_notifications():
-    notifications = db.session.query(
-        ThongBao.MaTB,
-        ThongBao.NoiDung,
-        ThongBao.NgayGui,
-        TB_NguoiNhan.TrangThaiDoc,
-        TB_NguoiNhan.ThoiGianDoc,
-        QuanTri.HoTen.label("NguoiGui")
-    ).join(
-        TB_NguoiNhan, ThongBao.MaTB == TB_NguoiNhan.MaTB
-    ).outerjoin(
-        QuanTri, ThongBao.MaAdmin == QuanTri.MaAdmin
-    ).filter(
-        TB_NguoiNhan.ID_TaiKhoan == current_user.id
-    ).order_by(
-        ThongBao.NgayGui.desc()
-    ).all()
+    receipts = TB_NguoiNhan.query.filter_by(ID_TaiKhoan=current_user.id).all()
+    notifications = []
 
-    from datetime import datetime
-    unread_receipts = TB_NguoiNhan.query.filter_by(
-        ID_TaiKhoan=current_user.id, 
-        TrangThaiDoc=False 
-    ).all()
-    
-    if unread_receipts:
-        for r in unread_receipts:
-            r.TrangThaiDoc = True
-            r.ThoiGianDoc = datetime.now()
+    for receipt in receipts:
+        content = ThongBao.query.get(receipt.MaTB)
+        if not content:
+            continue
+
+        sender_name = "Hệ thống"
+        if content.MaAdmin:
+            sender = QuanTri.query.get(content.MaAdmin)
+            if sender and sender.HoTen:
+                sender_name = sender.HoTen
+
+        notifications.append({
+            'receipt': receipt,
+            'content': content,
+            'sender_name': sender_name
+        })
+
+    notifications.sort(key=lambda x: x['content'].NgayGui, reverse=True)
+    return render_template('candidate/notifications.html', notifications=notifications)
+
+@candidate_bp.route('/notifications/<int:receipt_id>')
+@login_required
+def notification_detail(receipt_id):
+    receipt = TB_NguoiNhan.query.filter_by(MaTBNN=receipt_id, ID_TaiKhoan=current_user.id).first_or_404()
+    notification = ThongBao.query.get_or_404(receipt.MaTB)
+
+    sender_name = "Hệ thống"
+    if notification.MaAdmin:
+        sender = QuanTri.query.get(notification.MaAdmin)
+        if sender and sender.HoTen:
+            sender_name = sender.HoTen
+
+    if not receipt.TrangThaiDoc:
+        receipt.TrangThaiDoc = True
+        receipt.ThoiGianDoc = datetime.now()
         db.session.commit()
 
-    return render_template('candidate/notifications.html', notifications=notifications)
+    return render_template(
+        'candidate/notification_detail.html',
+        receipt=receipt,
+        notification=notification,
+        sender_name=sender_name
+    )

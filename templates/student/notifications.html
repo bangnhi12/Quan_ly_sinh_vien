@@ -14,29 +14,29 @@
 
             {% if notifications %}
                 <div class="d-flex flex-column gap-3">
-                    {# Sửa vòng lặp: lấy 'item' vì notifications giờ là danh sách các dictionary #}
                     {% for item in notifications %}
-                    <div class="card shadow-sm border-0 rounded-4 {% if not item.receipt.TrangThaiDoc %}border-start border-danger border-4{% endif %}">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="badge rounded-pill bg-dark px-3 fw-normal">Hệ thống</span>
-                                {# Truy cập qua item.content #}
-                                <small class="text-muted italic">
-                                    {% if item.content.NgayGui %}
-                                        {{ item.content.NgayGui.strftime('%H:%M - %d/%m/%Y') }}
-                                    {% else %}
-                                        Vừa xong
-                                    {% endif %}
-                                </small>
+                    <a href="{{ url_for('student.notification_detail', receipt_id=item.receipt.MaTBNN) }}"
+                       class="text-decoration-none">
+                        <div class="card shadow-sm border-0 rounded-4 {% if not item.receipt.TrangThaiDoc %}border-start border-danger border-4{% endif %}">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge rounded-pill bg-dark px-3 fw-normal">Hệ thống</span>
+                                    <small class="text-muted italic">
+                                        {% if item.content.NgayGui %}
+                                            {{ item.content.NgayGui.strftime('%H:%M - %d/%m/%Y') }}
+                                        {% else %}
+                                            Vừa xong
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                
+                                <h6 class="fw-bold text-dark mb-2">Thông báo mới từ Ban Quản lý</h6>
+                                <p class="text-secondary mb-0" style="line-height: 1.6;">
+                                    {{ item.content.NoiDung[:140] }}{% if item.content.NoiDung|length > 140 %}...{% endif %}
+                                </p>
                             </div>
-                            
-                            <h6 class="fw-bold text-dark mb-2">Thông báo mới từ Ban Quản lý</h6>
-                            <p class="text-secondary mb-0" style="line-height: 1.6;">
-                                {# Truy cập qua item.content #}
-                                {{ item.content.NoiDung }}
-                            </p>
                         </div>
-                    </div>
+                    </a>
                     {% endfor %}
                 </div>
             {% else %}
