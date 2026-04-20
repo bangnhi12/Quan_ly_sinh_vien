@@ -71,6 +71,35 @@
     </div>
 </div>
 
+<div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-header bg-dark text-white py-3">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-file-earmark-csv me-2"></i>Nhập sinh viên nhanh </h6>
+    </div>
+    <div class="card-body p-4">
+        <form action="{{ url_for('admin.import_students_minimal') }}" method="POST" enctype="multipart/form-data">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-8">
+                    <input type="file" name="file_excel" class="form-control" accept=".csv" required>
+                    <div class="form-text mt-2 small">
+                        Cấu trúc file: <span class="badge bg-light text-dark border">MaKhoa</span> 
+                        <span class="badge bg-light text-dark border">MaNganh</span> 
+                        <span class="badge bg-light text-dark border">MaLop</span> 
+                        <span class="badge bg-light text-dark border">MaSV</span> 
+                        <span class="badge bg-light text-dark border">HoTen</span> 
+                        <span class="badge bg-light text-dark border">NgaySinh</span> 
+                        <span class="badge bg-light text-dark border">Email</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-dark w-100 fw-bold shadow-sm">
+                        <i class="bi bi-upload me-2"></i> Tải lên ngay
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function updateSelect(action, targetId, selectId, label) {
     let select = document.getElementById(selectId);

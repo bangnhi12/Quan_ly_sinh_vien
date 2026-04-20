@@ -27,7 +27,10 @@ class XepLoaiSV(enum.Enum):
     KHA = "Khá"
     TRUNG_BINH = "Trung bình"
     YEU = "Yếu"
-
+class TrangThaiPhanHoi (enum.Enum):
+    CHO_DUYET = "Chờ duyệt"
+    DA_DUYET = "Đã hiển thị"
+    VI_PHAM = "Vi phạm"
 # --- 1. Bảng Tài Khoản (Trung tâm) ---
 class TaiKhoan(UserMixin, db.Model):
     __tablename__ = "TaiKhoan"
@@ -167,3 +170,21 @@ class TinNhan(db.Model):
 
     sender = relationship("TaiKhoan", foreign_keys=[ID_NguoiGui])
     receiver = relationship("TaiKhoan", foreign_keys=[ID_NguoiNhan])
+
+class ReviewNganh (db.Model):
+    __tablename__ = "ReviewNganh"
+    MaReview: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    MaSV: Mapped[str] = mapped_column(ForeignKey("SinhVien.MaSV"),nullable=False)
+    MaNganh: Mapped[str] = mapped_column(ForeignKey("Nganh.MaNganh"), nullable=False)
+    NoiDung: Mapped[str] = mapped_column(String(255), nullable=True)
+    ThoiGian: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    TrangThai: Mapped[TrangThaiPhanHoi] = mapped_column(
+        Enum(TrangThaiPhanHoi, values_callable = lambda x: [e.value for e in x]),
+        default=TrangThaiPhanHoi.CHO_DUYET
+    )
+    MaAdmin: Mapped[int] = mapped_column(ForeignKey("QuanTri.MaAdmin"), nullable=True)
+
+    sinh_vien = relationship("SinhVien", backref=db.backref("reviews", lazy=True))
+    nganh = relationship("Nganh", backref=db.backref("ds_reviews", lazy=True))
+    admin = relationship("QuanTri", backref=db.backref("ds_review_da_duyet", lazy=True))
+    

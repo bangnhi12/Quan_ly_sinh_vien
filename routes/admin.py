@@ -121,6 +121,9 @@ def delete_nganh(ma_nganh):
 @login_required
 def view_all_applications():
     filter_status = request.args.get('status')
+    ma_nganh_filter = request.args.get('ma_nganh')
+    min_diem_filter = request.args.get('min_diem', type=float)
+    pt_filter = request.args.get('phuong_thuc')
 
     query = db.session.query(PT_XetTuyen, HSO_XETTUYEN.HoTen, Nganh.TenNganh)\
             .join(HSO_XETTUYEN, PT_XetTuyen.MaHSO == HSO_XETTUYEN.MaHSO)\
@@ -128,9 +131,20 @@ def view_all_applications():
     
     if filter_status:
         query = query.filter(PT_XetTuyen.TrangThai == filter_status)
-    
+    if ma_nganh_filter:
+        query = query.filter(PT_XetTuyen.MaNganh == ma_nganh_filter)
+    if min_diem_filter is not None:
+        query = query.filter(PT_XetTuyen.Diem >= min_diem_filter)
+    if pt_filter:
+        query = query.filter(PT_XetTuyen.PhuongThuc == pt_filter)
     applications = query.order_by(HSO_XETTUYEN.HoTen.asc()).all()
-    return render_template('admin/view_applications.html', applications=applications)
+    nganhs = Nganh.query.all()
+    all_methods = db.session.query(PT_XetTuyen.PhuongThuc).distinct().all()
+    methods = [m[0] for m in all_methods]
+    return render_template('admin/view_applications.html',
+                            applications=applications,
+                            nganhs = nganhs,
+                            methods=methods)
 
 
 @admin_bp.route('/approve/<string:ma_ptxt>/<string:action>')
@@ -327,6 +341,90 @@ def create_student():
             flash("Lỗi: {str(e)}")
     khoas = Khoa.query.all()
     return render_template('admin/create_student.html', khoas=khoas)
+
+import pandas as pd
+import io
+from datetime import datetime
+from flask import request, flash, redirect, url_for
+from models import db, Khoa, Nganh, Lop, SinhVien, TaiKhoan, VaiTro 
+
+@admin_bp.route('/import_students_minimal', methods=['POST'])
+@login_required
+def import_students_minimal():
+    file = request.files.get('file_excel')
+    if not file or file.filename == '':
+        flash('Vui lòng chọn file CSV!', 'danger')
+        return redirect(url_for('admin.create_student'))
+
+    index = -1 
+    try:
+        raw_data = file.stream.read().decode("utf-8-sig")
+        stream = io.StringIO(raw_data)
+        df = pd.read_csv(stream, sep=None, engine='python')
+
+        if df.empty:
+            flash('File CSV không có dữ liệu!', 'warning')
+            return redirect(url_for('admin.create_student'))
+        df.columns = [str(c).strip() for c in df.columns]
+
+        print(f"--- DEBUG: Danh sách cột hệ thống đọc được: {df.columns.tolist()}")
+        if 'MaKhoa' not in df.columns:
+            flash(f"Lỗi: Không tìm thấy cột 'MaKhoa'. File hiện có các cột: {', '.join(df.columns)}", 'danger')
+            return redirect(url_for('admin.create_student'))
+
+        success_count = 0
+        for index, row in df.iterrows():
+            mk = str(row['MaKhoa']).strip()
+            mn = str(row['MaNganh']).strip()
+            ml = str(row['MaLop']).strip()
+            msv = str(row['MaSV']).strip()
+            hoten = str(row['HoTen']).strip()
+            email = str(row['Email']).strip()
+            ngay_sinh_str = str(row['NgaySinh']).strip()
+            khoa = db.session.get(Khoa, mk)
+            if not khoa:
+                khoa = Khoa(MaKhoa=mk, TenKhoa=f"Khoa {mk}")
+                db.session.add(khoa)
+            nganh = db.session.get(Nganh, mn)
+            if not nganh:
+                nganh = Nganh(MaNganh=mn, TenNganh=f"Ngành {mn}", MaKhoa=mk)
+                db.session.add(nganh)
+            lop = db.session.get(Lop, ml)
+            if not lop:
+                lop = Lop(MaLop=ml, TenLop=f"Lớp {ml}", MaNganh=mn)
+                db.session.add(lop)
+            db.session.flush()
+            if not db.session.get(SinhVien, msv):
+                new_user = TaiKhoan(
+                    ten_dang_nhap=msv,
+                    mat_khau=msv, 
+                    vai_tro=VaiTro.SINHVIEN
+                )
+                db.session.add(new_user)
+                db.session.flush()
+                try:
+                    ngay_sinh = pd.to_datetime(ngay_sinh_str, dayfirst=True).date()
+                except:
+                    ngay_sinh = datetime.now().date()
+                new_sv = SinhVien(
+                    MaSV=msv,
+                    HoTen=hoten,
+                    NgaySinh=ngay_sinh,
+                    Email=email,
+                    MaLop=ml,
+                    ID_TaiKhoan=new_user.id
+                )
+                db.session.add(new_sv)
+                success_count += 1
+        db.session.commit()
+        flash(f'Import thành công {success_count} sinh viên từ file CSV!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        error_msg = f"Lỗi tại dòng {index + 2}: {str(e)}" if index >= 0 else f"Lỗi: {str(e)}"
+        flash(error_msg, 'danger')
+        print(f"--- LOG LỖI CHI TIẾT ---\n{str(e)}")
+
+    return redirect(url_for('admin.create_student'))
 
 @admin_bp.route('/manage_lops', methods = ['GET', 'POST'])
 @login_required
