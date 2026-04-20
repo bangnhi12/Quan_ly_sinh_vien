@@ -120,45 +120,78 @@ def delete_nganh(ma_nganh):
 @admin_bp.route('/review_applications')
 @login_required
 def view_all_applications():
+    # 1. Lấy tham số lọc từ URL (Request Args)
     filter_status = request.args.get('status')
     ma_nganh_filter = request.args.get('ma_nganh')
     min_diem_filter = request.args.get('min_diem', type=float)
     pt_filter = request.args.get('phuong_thuc')
 
-    query = db.session.query(PT_XetTuyen, HSO_XETTUYEN.HoTen, Nganh.TenNganh)\
-            .join(HSO_XETTUYEN, PT_XetTuyen.MaHSO == HSO_XETTUYEN.MaHSO)\
-            .join(Nganh, PT_XetTuyen.MaNganh == Nganh.MaNganh)
-    
+    # 2. Xây dựng Query cơ bản với JOIN
+    # Chúng ta lấy: Đối tượng PT_XetTuyen, Tên thí sinh, Tên ngành
+    query = db.session.query(
+        PT_XetTuyen, 
+        HSO_XETTUYEN.HoTen, 
+        Nganh.TenNganh
+    ).join(HSO_XETTUYEN, PT_XetTuyen.MaHSO == HSO_XETTUYEN.MaHSO)\
+     .join(Nganh, PT_XetTuyen.MaNganh == Nganh.MaNganh)
+
+    # 3. Áp dụng các bộ lọc nếu người dùng có chọn
     if filter_status:
+        # So sánh với giá trị String của Enum (ví dụ: 'Chờ duyệt')
         query = query.filter(PT_XetTuyen.TrangThai == filter_status)
+        
     if ma_nganh_filter:
         query = query.filter(PT_XetTuyen.MaNganh == ma_nganh_filter)
+        
     if min_diem_filter is not None:
         query = query.filter(PT_XetTuyen.Diem >= min_diem_filter)
-    if pt_filter:
-        query = query.filter(PT_XetTuyen.PhuongThuc == pt_filter)
-    applications = query.order_by(HSO_XETTUYEN.HoTen.asc()).all()
+        
+    if pt_filter and pt_filter != "":
+        try:
+            # Chuyển string 'DGNL' thành LoaiPhuongThuc.DGNL
+            enum_pt = LoaiPhuongThuc[pt_filter] 
+            query = query.filter(PT_XetTuyen.LoaiPT == enum_pt)
+        except KeyError:
+            # Nếu string gửi lên không khớp với Enum thì bỏ qua lọc
+            pass
+
+    # 4. Sắp xếp theo điểm giảm dần và thực thi truy vấn
+    applications = query.order_by(PT_XetTuyen.Diem.desc()).all()
+
+    # 5. Lấy dữ liệu bổ trợ cho các ô Select trên giao diện
     nganhs = Nganh.query.all()
-    all_methods = db.session.query(PT_XetTuyen.PhuongThuc).distinct().all()
-    methods = [m[0] for m in all_methods]
-    return render_template('admin/view_applications.html',
-                            applications=applications,
-                            nganhs = nganhs,
-                            methods=methods)
+    # Lấy danh sách các phương thức từ Enum đã định nghĩa
+    methods = [m.name for m in LoaiPhuongThuc] 
+
+    return render_template(
+        'admin/view_applications.html',
+        applications=applications,
+        nganhs=nganhs,
+        methods=methods
+    )
 
 
 @admin_bp.route('/approve/<string:ma_ptxt>/<string:action>')
 @login_required
 def approve_admission(ma_ptxt, action):
-    pt = db.get_or_404(PT_XetTuyen, ma_ptxt)
+    # Lấy bản ghi xét tuyển theo ID (MaPTXT)
+    pt = PT_XetTuyen.query.get_or_404(ma_ptxt)
 
     if action == 'accept':
         pt.TrangThai = TrangThaiXT.TRUNG_TUYEN
+        flash(f"Đã duyệt trúng tuyển cho hồ sơ mã {ma_ptxt}", "success")
     elif action == 'reject':
         pt.TrangThai = TrangThaiXT.TU_CHOI
+        flash(f"Đã từ chối hồ sơ mã {ma_ptxt}", "info")
 
-    db.session.commit()
-    return redirect(url_for('admin.view_all_applications'))
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Lỗi hệ thống: {str(e)}", "danger")
+
+    # Quay lại trang danh sách kèm theo các tham số lọc hiện tại (nếu có)
+    return redirect(request.referrer or url_for('admin.view_all_applications'))
 
 @admin_bp.route('/input_grade', methods=['GET', 'POST'])
 @login_required

@@ -1,41 +1,28 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="mb-4">
-        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+<div class="container-fluid py-4">
+    <div class="mb-3">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm">
             <i class="bi bi-arrow-left me-1"></i> Quay lại Dashboard
         </a>
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold text-dark">
-            <i class="bi bi-clipboard-check me-2 text-danger"></i>DUYỆT HỒ SƠ XÉT TUYỂN
-        </h3>
-        <div class="btn-group shadow-sm">
-            <a href="{{ url_for('admin.view_all_applications') }}" 
-               class="btn btn-outline-dark btn-sm {% if not request.args.get('status') %}active{% endif %}">Tất cả</a>
-            <a href="{{ url_for('admin.view_all_applications', status='Chờ duyệt') }}" 
-               class="btn btn-outline-warning btn-sm {% if request.args.get('status') == 'Chờ duyệt' %}active{% endif %}">Đang chờ</a>
-        </div>
+        <h3 class="fw-bold text-dark"><i class="bi bi-person-badge-fill me-2 text-danger"></i>QUẢN LÝ XÉT TUYỂN</h3>
+        <span class="badge bg-dark px-3 py-2">Tổng số: {{ applications|length }} hồ sơ</span>
     </div>
 
-    <div class="card shadow-sm border-0 rounded-4 mb-4 bg-white">
+    <div class="card shadow-sm border-0 rounded-3 mb-4">
         <div class="card-body p-4">
-            <h6 class="fw-bold mb-3 text-muted small text-uppercase mt-0">
-                <i class="bi bi-filter-right me-1"></i> Bộ lọc tìm kiếm
-            </h6>
-            <form method="GET" action="{{ url_for('admin.view_all_applications') }}" class="row g-3 align-items-end">
-                {% if request.args.get('status') %}
-                <input type="hidden" name="status" value="{{ request.args.get('status') }}">
-                {% endif %}
-
+            <h6 class="fw-bold mb-3"><i class="bi bi-funnel-fill me-2"></i>Bộ lọc tìm kiếm</h6>
+            <form method="GET" action="{{ url_for('admin.view_all_applications') }}" class="row g-3">
                 <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted">Ngành học</label>
-                    <select name="ma_nganh" class="form-select border-0 bg-light">
+                    <label class="form-label small fw-bold">Ngành đào tạo</label>
+                    <select name="ma_nganh" class="form-select bg-light border-0">
                         <option value="">-- Tất cả ngành --</option>
                         {% for n in nganhs %}
-                        <option value="{{ n.MaNganh }}" {% if request.args.get('ma_nganh') == n.MaNganh %}selected{% endif %}>
+                        <option value="{{ n.MaNganh }}" {{ 'selected' if request.args.get('ma_nganh') == n.MaNganh }}>
                             {{ n.TenNganh }}
                         </option>
                         {% endfor %}
@@ -43,106 +30,173 @@
                 </div>
 
                 <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted">Phương thức</label>
-                    <select name="phuong_thuc" class="form-select border-0 bg-light">
-                        <option value="">-- Tất cả phương thức --</option>
-                        {% for m in methods %}
-                        <option value="{{ m }}" {% if request.args.get('phuong_thuc') == m %}selected{% endif %}>
-                            {{ m }}
+                    <label class="form-label small fw-bold">Phương thức</label>
+                    <select name="phuong_thuc" class="form-select border-0 bg-light shadow-none">
+                        <option value="">Tất cả phương thức</option>
+                        {% for m_name in methods %}
+                        <option value="{{ m_name }}" {{ 'selected' if request.args.get('phuong_thuc') == m_name }}>
+                            {% if m_name == 'DGNL' %} Đánh giá năng lực
+                            {% elif m_name == 'HOCBA_IELTS' %} Học bạ + IELTS
+                            {% elif m_name == 'THPT' %} Điểm thi THPT
+                            {% else %} {{ m_name }}
+                            {% endif %}
                         </option>
                         {% endfor %}
                     </select>
                 </div>
 
                 <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted">Điểm tối thiểu</label>
-                    <input type="number" step="0.01" name="min_diem" class="form-control border-0 bg-light" 
-                           placeholder="Ví dụ: 24.5" value="{{ request.args.get('min_diem', '') }}">
+                    <label class="form-label small fw-bold">Điểm tối thiểu</label>
+                    <input type="number" step="0.01" name="min_diem" class="form-control bg-light border-0" 
+                           value="{{ request.args.get('min_diem', '') }}" placeholder="Ví dụ: 25.0">
                 </div>
 
-                <div class="col-md-4">
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-danger w-100 fw-bold shadow-sm">
-                            <i class="bi bi-search me-2"></i> Lọc dữ liệu
-                        </button>
-                        <a href="{{ url_for('admin.view_all_applications') }}" class="btn btn-light border text-muted shadow-sm" title="Làm mới">
-                            <i class="bi bi-arrow-counterclockwise"></i>
-                        </a>
-                    </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Trạng thái</label>
+                    <select name="status" class="form-select bg-light border-0">
+                        <option value="">-- Tất cả --</option>
+                        <option value="Chờ duyệt" {{ 'selected' if request.args.get('status') == 'Chờ duyệt' }}>Chờ duyệt</option>
+                        <option value="Trúng tuyển" {{ 'selected' if request.args.get('status') == 'Trúng tuyển' }}>Trúng tuyển</option>
+                        <option value="Từ chối" {{ 'selected' if request.args.get('status') == 'Từ chối' }}>Từ chối</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-danger w-100 fw-bold">Lọc</button>
+                    <a href="{{ url_for('admin.view_all_applications') }}" class="btn btn-outline-secondary w-100">Xóa</a>
                 </div>
             </form>
         </div>
     </div>
 
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-        <div class="card-body p-0">
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr class="small text-uppercase fw-bold text-muted">
-                        <th class="ps-4 py-3">Thí sinh</th>
-                        <th>Ngành đăng ký</th>
+                <thead class="table-danger text-dark">
+                    <tr>
+                        <th class="ps-4">Thí sinh</th>
+                        <th class="text-center">Hồ sơ</th> <th>Ngành đăng ký</th>
                         <th>Phương thức</th>
-                        <th>Điểm</th>
+                        <th>Điểm xét</th>
+                        <th>Minh chứng</th>
                         <th>Trạng thái</th>
-                        <th class="text-center">Thao tác</th>
+                        <th class="text-center pe-4">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% if applications %}
-                        {% for pt, ho_ten, ten_nganh in applications %}
-                        <tr>
-                            <td class="ps-4">
-                                <div class="fw-bold text-primary">{{ ho_ten }}</div>
-                                <small class="text-muted"><i class="bi bi-hash"></i> Mã HS: {{ pt.MaHSO }}</small>
-                            </td>
-                            <td>
-                                <div class="fw-bold text-dark">{{ ten_nganh }}</div>
-                                <small class="badge bg-light text-secondary border-0">{{ pt.MaNganh }}</small>
-                            </td>
-                            <td>
-                                <span class="text-secondary small">
-                                    {{ pt.PhuongThuc }}
-                                </span>
-                            </td>
-                            <td><span class="fw-bold text-danger fs-5">{{ pt.Diem }}</span></td>
-                            <td>
-                                {% if pt.TrangThai.name == 'CHO_DUYET' %}
-                                    <span class="badge rounded-pill bg-warning text-dark px-3">Đang chờ</span>
-                                {% elif pt.TrangThai.name == 'TRUNG_TUYEN' %}
-                                    <span class="badge rounded-pill bg-success px-3">Trúng tuyển</span>
-                                {% else %}
-                                    <span class="badge rounded-pill bg-danger px-3">Từ chối</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                {% if pt.TrangThai.name == 'CHO_DUYET' %}
-                                <div class="btn-group btn-group-sm shadow-sm">
-                                    <a href="{{ url_for('admin.approve_admission', ma_ptxt=pt.MaPTXT, action='accept') }}" 
-                                       class="btn btn-success px-3">
-                                        <i class="bi bi-check-lg"></i> Duyệt
-                                    </a>
-                                    <a href="{{ url_for('admin.approve_admission', ma_ptxt=pt.MaPTXT, action='reject') }}" 
-                                       class="btn btn-outline-danger px-3">
-                                        <i class="bi bi-x-lg"></i> Từ chối
-                                    </a>
+                    {% for pt, ho_ten, ten_nganh in applications %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ ho_ten }}</div>
+                            <small class="text-muted">Mã HS: #{{ pt.MaHSO }}</small>
+                        </td>
+
+                        <td class="text-center">
+                            <a href="javascript:void(0)" class="text-primary fs-5" data-bs-toggle="modal" data-bs-target="#modalHso{{ pt.MaPTXT }}" title="Xem hồ sơ cá nhân">
+                                <i class="bi bi-eye-fill"></i>
+                            </a>
+
+                            <div class="modal fade" id="modalHso{{ pt.MaPTXT }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow">
+                                        <div class="modal-header bg-danger text-white border-0">
+                                            <h5 class="modal-title fw-bold">THÔNG TIN THÍ SINH</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-4 text-start">
+                                            <div class="row g-3">
+                                                <div class="col-6">
+                                                    <label class="small text-muted d-block">Họ và tên</label>
+                                                    <span class="fw-bold">{{ ho_ten }}</span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="small text-muted d-block">Số CCCD</label>
+                                                    <span class="fw-bold">{{ pt.ho_so.CCCD }}</span>
+                                                </div>
+                                                <div class="col-12"><hr class="my-1 opacity-25"></div>
+                                                <div class="col-6">
+                                                    <label class="small text-muted d-block">Điện thoại</label>
+                                                    <span class="fw-bold">{{ pt.ho_so.SDT }}</span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="small text-muted d-block">Giới tính</label>
+                                                    <span class="fw-bold text-capitalize">{{ pt.ho_so.GioiTinh.value }}</span>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="small text-muted d-block">Email</label>
+                                                    <span class="fw-bold">{{ pt.ho_so.Email }}</span>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="small text-muted d-block">Ngày sinh</label>
+                                                    <span class="fw-bold">{{ pt.ho_so.NgaySinh.strftime('%d/%m/%Y') if pt.ho_so.NgaySinh else 'N/A' }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                {% else %}
-                                    <span class="text-muted small fst-italic">Hoàn thành</span>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="small fw-bold">{{ ten_nganh }}</div>
+                            <small class="text-muted">{{ pt.MaNganh }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ pt.LoaiPT.value }}</span>
+                        </td>
+                        <td>
+                            <span class="text-danger fw-bold fs-5">{{ pt.Diem }}</span>
+                            {% if pt.DiemIELTS %}
+                                <div class="small text-muted">IELTS: <strong>{{ pt.DiemIELTS }}</strong></div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column gap-1">
+                                {% if pt.FileDGNL %}
+                                <a href="{{ url_for('static', filename='uploads/hoso/' + pt.FileDGNL) }}" target="_blank" class="btn btn-sm btn-outline-primary py-0 small"><i class="bi bi-file-earmark-pdf"></i> DGNL</a>
                                 {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
+                                {% if pt.FileHocBa %}
+                                <a href="{{ url_for('static', filename='uploads/hoso/' + pt.FileHocBa) }}" target="_blank" class="btn btn-sm btn-outline-primary py-0 small"><i class="bi bi-journal-text"></i> Học bạ</a>
+                                {% endif %}
+                                {% if pt.FileIELTS %}
+                                <a href="{{ url_for('static', filename='uploads/hoso/' + pt.FileIELTS) }}" target="_blank" class="btn btn-sm btn-outline-primary py-0 small"><i class="bi bi-award"></i> IELTS</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if pt.TrangThai.value == 'Chờ duyệt' %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i> Chờ duyệt</span>
+                            {% elif pt.TrangThai.value == 'Trúng tuyển' %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Trúng tuyển</span>
+                            {% else %}
+                                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> Từ chối</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center pe-4">
+                            {% if pt.TrangThai.value == 'Chờ duyệt' %}
+                            <div class="btn-group">
+                                <a href="{{ url_for('admin.approve_admission', ma_ptxt=pt.MaPTXT, action='accept') }}" 
+                                   class="btn btn-success btn-sm px-3" onclick="return confirm('Xác nhận trúng tuyển cho thí sinh này?')">
+                                    Duyệt
+                                </a>
+                                <a href="{{ url_for('admin.approve_admission', ma_ptxt=pt.MaPTXT, action='reject') }}" 
+                                   class="btn btn-outline-danger btn-sm px-3" onclick="return confirm('Từ chối hồ sơ này?')">
+                                    Loại
+                                </a>
+                            </div>
+                            {% else %}
+                            <button class="btn btn-light btn-sm text-muted" disabled>Đã xử lý</button>
+                            {% endif %}
+                        </td>
+                    </tr>
                     {% else %}
-                        <tr>
-                            <td colspan="6" class="text-center py-5">
-                                <div class="text-muted">
-                                    <i class="bi bi-search fs-1 d-block mb-3 opacity-25"></i>
-                                    <p class="mb-0">Không tìm thấy hồ sơ nào khớp với bộ lọc của bạn.</p>
-                                    <a href="{{ url_for('admin.view_all_applications') }}" class="small text-decoration-none">Xóa tất cả bộ lọc</a>
-                                </div>
-                            </td>
-                        </tr>
-                    {% endif %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="80" class="opacity-25 mb-3"><br>
+                            <span class="text-muted">Không tìm thấy hồ sơ nào phù hợp với bộ lọc!</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>

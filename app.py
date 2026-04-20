@@ -10,7 +10,7 @@ from routes.student import student_bp
 from models import VaiTro
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'quanlysinhvien'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/quan_ly_sinh_vien'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/quan_ly_sinh_vien_1'
 
 db.init_app(app)
 login_manager.init_app(app)

@@ -3,8 +3,10 @@ from flask_login import *
 from extensions import db
 from models import *
 import uuid
-
+from werkzeug.utils import secure_filename
+from models import db, PT_XetTuyen, HSO_XETTUYEN, Nganh, LoaiPhuongThuc
 from routes import student
+import os
 
 candidate_bp = Blueprint('candidate', __name__)
 
@@ -20,56 +22,90 @@ def update_profile():
     hso = HSO_XETTUYEN.query.filter_by(ID_TaiKhoan=current_user.id).first()
 
     if request.method == 'POST':
-        hoten = request.form.get('fullname')
+        fullname = request.form.get('fullname')
         cccd = request.form.get('cccd')
         sdt = request.form.get('sdt')
-
+        email = request.form.get('email')
+        ngay_sinh_str = request.form.get('ngay_sinh')
+        gioi_tinh = request.form.get('gioi_tinh')
+        ngay_sinh = datetime.strptime(ngay_sinh_str, '%Y-%m-%d').date()
         if not hso:
-            new_hso = HSO_XETTUYEN(
-            ID_TaiKhoan = current_user.id,
-            HoTen = hoten,
-            CCCD = cccd,
-            SDT = sdt 
-        )
-            db.session.add(new_hso)
-            flash('Đã tạo hồ sơ thành công')
+            hso = HSO_XETTUYEN(
+                ID_TaiKhoan=current_user.id,
+                HoTen=fullname,
+                Email=email,
+                SDT=sdt,
+                CCCD=cccd,
+                NgaySinh=ngay_sinh,
+                GioiTinh=GioiTinh[gioi_tinh]
+            )
+            db.session.add(hso)
         else:
-            hso.HoTen = hoten
-            hso.CCCD = cccd
+            hso.HoTen = fullname
+            hso.Email = email
             hso.SDT = sdt
-            flash('Đã cập nhật lại hồ sơ của bạn')
+            hso.CCCD = cccd
+            hso.NgaySinh = ngay_sinh
+            hso.GioiTinh = GioiTinh[gioi_tinh]
 
-        db.session.commit()
-        return redirect(url_for('candidate.dashboard'))
+        try:
+            db.session.commit()
+            flash("Cập nhật hồ sơ thành công!", "success")
+            return redirect(url_for('candidate.register_admission')) # Chuyển hướng sang trang đăng ký xét tuyển
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Lỗi khi lưu dữ liệu: {str(e)}", "danger")
+
     return render_template('candidate/update_profile.html', hso=hso)
+UPLOAD_PATH = os.path.join('static', 'uploads', 'hoso')
 
-@candidate_bp.route('/regadmission', methods=['GET','POST'])
+# Kiểm tra nếu thư mục chưa tồn tại thì tạo mới
+if not os.path.exists(UPLOAD_PATH):
+    os.makedirs(UPLOAD_PATH)
+
+# Hàm hỗ trợ lưu file
+def save_uploaded_file(file, prefix, hso_id):
+    if file and file.filename != '':
+        filename = secure_filename(f"{prefix}_{hso_id}_{file.filename}")
+        file.save(os.path.join(UPLOAD_PATH, filename))
+        return filename
+    return None
+
+@candidate_bp.route('/regadmission', methods=['GET', 'POST'])
 @login_required
 def register_admission():
     hso = HSO_XETTUYEN.query.filter_by(ID_TaiKhoan=current_user.id).first()
-    ds_nganh = Nganh.query.all()
-
+    
     if not hso:
-        flash('Vui lòng cập nhật thông tin cá nhân trước khi đăng ký xét tuyển')
+        flash("Bạn phải cập nhật thông tin cá nhân trước khi đăng ký xét tuyển!", "warning")
         return redirect(url_for('candidate.update_profile'))
 
     if request.method == 'POST':
-        ma_nganh = request.form.get('ma_nganh')
-        phuong_thuc = request.form.get('phuong_thuc')
-        random_id = str(uuid.uuid4())[:5].upper()
-        diem = request.form.get('diem')
-        new_admission = PT_XetTuyen(
-            MaPTXT = random_id,
-            MaNganh = ma_nganh,
-            PhuongThuc = phuong_thuc,
-            Diem = diem,
-            TrangThai = TrangThaiXT.CHO_DUYET,
-            MaHSO = hso.MaHSO
-        )
-        db.session.add(new_admission)
-        db.session.commit()
-        flash('Đã gửi nguyện vọng xét tuyển thành công')
-        return redirect(url_for('candidate.dashboard'))
+        try:
+            loai_pt_str = request.form.get('loai_pt')
+            new_reg = PT_XetTuyen(
+                MaHSO=hso.MaHSO,
+                MaNganh=request.form.get('ma_nganh'),
+                LoaiPT=LoaiPhuongThuc[loai_pt_str],
+                Diem=request.form.get('diem')
+            )
+
+            if loai_pt_str == 'DGNL':
+                new_reg.FileDGNL = save_uploaded_file(request.files.get('file_dgnl'), "DGNL", hso.MaHSO)
+            
+            elif loai_pt_str == 'HOCBA_IELTS':
+                new_reg.DiemIELTS = request.form.get('diem_ielts')
+                new_reg.FileHocBa = save_uploaded_file(request.files.get('file_hocba'), "HB", hso.MaHSO)
+                new_reg.FileIELTS = save_uploaded_file(request.files.get('file_ielts'), "IELTS", hso.MaHSO)
+
+            db.session.add(new_reg)
+            db.session.commit()
+            flash("Gửi hồ sơ xét tuyển thành công! Vui lòng chờ kết quả duyệt.", "success")
+            return redirect(url_for('candidate.dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Có lỗi xảy ra: {str(e)}", "danger")
+    ds_nganh = Nganh.query.all()
     return render_template('candidate/register_admission.html', ds_nganh=ds_nganh)
 
 @candidate_bp.route('/result', methods=['GET'])

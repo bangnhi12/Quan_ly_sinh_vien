@@ -11,6 +11,10 @@ class Base(DeclarativeBase):
 
 
 # --- Các tập hợp giá trị (Enum) ---
+class LoaiPhuongThuc(enum.Enum):
+    DGNL = "Đánh giá năng lực"
+    HOCBA_IELTS = "Học bạ kết hợp IELTS"
+    THPT = "Điểm thi THPT"
 class VaiTro(enum.Enum):
     ADMIN = "admin"
     SINHVIEN = "sinhvien"
@@ -31,6 +35,9 @@ class TrangThaiPhanHoi (enum.Enum):
     CHO_DUYET = "Chờ duyệt"
     DA_DUYET = "Đã hiển thị"
     VI_PHAM = "Vi phạm"
+class GioiTinh(enum.Enum):
+    NAM = "Nam"
+    NU = "Nữ"
 # --- 1. Bảng Tài Khoản (Trung tâm) ---
 class TaiKhoan(UserMixin, db.Model):
     __tablename__ = "TaiKhoan"
@@ -89,6 +96,12 @@ class HSO_XETTUYEN(db.Model):
     MaHSO: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     ID_TaiKhoan: Mapped[int] = mapped_column(ForeignKey("TaiKhoan.ID_TaiKhoan"), unique=True)
     HoTen: Mapped[str] = mapped_column(String(100), nullable=False)
+    Email: Mapped[str] = mapped_column(String(100), nullable=False)
+    NgaySinh: Mapped[date] = mapped_column(Date, nullable=False)
+    GioiTinh: Mapped[GioiTinh] = mapped_column( 
+        Enum(GioiTinh, values_callable=lambda x: [e.value for e in x]), 
+        nullable=False
+    )
     CCCD: Mapped[str] = mapped_column(String(12), unique=True, nullable=False)
     SDT: Mapped[str] = mapped_column(String(15), unique=True, nullable=False)
     tai_khoan = relationship("TaiKhoan", back_populates="hso_xettuyen")
@@ -108,13 +121,25 @@ class SinhVien(db.Model):
 # --- 4. Các bảng Nghiệp vụ (Xét tuyển, Kết quả, Tốt nghiệp) ---
 class PT_XetTuyen(db.Model):
     __tablename__ = "PT_XetTuyen"
-    MaPTXT: Mapped[str] = mapped_column(String(5), primary_key=True)
-    MaNganh: Mapped[str] = mapped_column(ForeignKey("Nganh.MaNganh"))
-    PhuongThuc: Mapped[str] = mapped_column(String(100), nullable=False)
+    MaPTXT: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    MaHSO: Mapped[int] = mapped_column(ForeignKey("HSO_XETTUYEN.MaHSO"), nullable=False)
+    MaNganh: Mapped[str] = mapped_column(ForeignKey("Nganh.MaNganh"), nullable=False)
+    LoaiPT: Mapped[LoaiPhuongThuc] = mapped_column(
+        Enum(LoaiPhuongThuc, values_callable=lambda x: [e.value for e in x]), 
+        nullable=False
+    )
     Diem: Mapped[float] = mapped_column(Numeric(4, 2), nullable=False)
-    TrangThai: Mapped[TrangThaiXT] = mapped_column(Enum(TrangThaiXT,  values_callable=lambda x: [e.value for e in x]), default=TrangThaiXT.CHO_DUYET)
-    MaHSO: Mapped[int] = mapped_column(ForeignKey("HSO_XETTUYEN.MaHSO"))
+    DiemIELTS: Mapped[float] = mapped_column(Numeric(2, 1), nullable=True)
+    FileDGNL: Mapped[str] = mapped_column(String(255), nullable=True)   # Cho phương thức DGNL
+    FileHocBa: Mapped[str] = mapped_column(String(255), nullable=True)  # Cho phương thức Học bạ
+    FileIELTS: Mapped[str] = mapped_column(String(255), nullable=True)  # Cho phương thức IELTS
+    TrangThai: Mapped[TrangThaiXT] = mapped_column(
+        Enum(TrangThaiXT, values_callable=lambda x: [e.value for e in x]), 
+        default=TrangThaiXT.CHO_DUYET
+    )
     MaAdmin: Mapped[int] = mapped_column(ForeignKey("QuanTri.MaAdmin"), nullable=True)
+    ho_so = relationship("HSO_XETTUYEN", backref=db.backref("ds_dang_ky", lazy=True))
+    nganh = relationship("Nganh")
 
 class KQ_HocTap(db.Model):
     __tablename__ = "KQ_HocTap"
