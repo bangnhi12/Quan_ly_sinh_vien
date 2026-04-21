@@ -1,44 +1,38 @@
--- =============================================
--- FULL MYSQL SCHEMA GENERATED FROM FLASK MODELS
--- =============================================
-CREATE DATABASE IF NOT EXISTS quanly_sinhvien
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE quan_ly_sinh_vien;
+USE quan_ly_sinh_vien;
 
-USE quanly_sinhvien;
-
--- 1. TAI KHOAN
+-- 1. TaiKhoan
 CREATE TABLE TaiKhoan (
     ID_TaiKhoan INT AUTO_INCREMENT PRIMARY KEY,
-    TenDangNhap VARCHAR(50) NOT NULL UNIQUE,
+    TenDangNhap VARCHAR(50) UNIQUE NOT NULL,
     MatKhau VARCHAR(255) NOT NULL,
     VaiTro ENUM('admin','sinhvien','thisinh') NOT NULL,
     TrangThai BOOLEAN DEFAULT TRUE
 );
 
--- 2. KHOA
+-- 2. Khoa
 CREATE TABLE Khoa (
     MaKhoa VARCHAR(2) PRIMARY KEY,
-    TenKhoa VARCHAR(100) NOT NULL UNIQUE
+    TenKhoa VARCHAR(100) UNIQUE NOT NULL
 );
 
--- 3. NGANH
+-- 3. Nganh
 CREATE TABLE Nganh (
     MaNganh VARCHAR(4) PRIMARY KEY,
     TenNganh VARCHAR(100) NOT NULL,
     MaKhoa VARCHAR(2),
-    CONSTRAINT fk_nganh_khoa FOREIGN KEY (MaKhoa) REFERENCES Khoa(MaKhoa)
+    FOREIGN KEY (MaKhoa) REFERENCES Khoa(MaKhoa)
 );
 
--- 4. LOP
+-- 4. Lop
 CREATE TABLE Lop (
     MaLop VARCHAR(11) PRIMARY KEY,
-    TenLop VARCHAR(100) NOT NULL UNIQUE,
+    TenLop VARCHAR(100) UNIQUE NOT NULL,
     MaNganh VARCHAR(4),
-    CONSTRAINT fk_lop_nganh FOREIGN KEY (MaNganh) REFERENCES Nganh(MaNganh)
+    FOREIGN KEY (MaNganh) REFERENCES Nganh(MaNganh)
 );
 
--- 5. MON HOC
+-- 5. MonHoc
 CREATE TABLE MonHoc (
     MaMH VARCHAR(7) PRIMARY KEY,
     TenMH VARCHAR(100) NOT NULL,
@@ -46,92 +40,99 @@ CREATE TABLE MonHoc (
     CHECK (SoTinChi > 0)
 );
 
--- 6. QUAN TRI
+-- 6. QuanTri
 CREATE TABLE QuanTri (
     MaAdmin INT AUTO_INCREMENT PRIMARY KEY,
     HoTen VARCHAR(100),
     ID_TaiKhoan INT UNIQUE,
-    CONSTRAINT fk_admin_taikhoan FOREIGN KEY (ID_TaiKhoan) REFERENCES TaiKhoan(ID_TaiKhoan)
+    FOREIGN KEY (ID_TaiKhoan) REFERENCES TaiKhoan(ID_TaiKhoan)
 );
 
--- 7. HO SO XET TUYEN
+-- 7. HSO_XETTUYEN
 CREATE TABLE HSO_XETTUYEN (
     MaHSO INT AUTO_INCREMENT PRIMARY KEY,
     ID_TaiKhoan INT UNIQUE,
     HoTen VARCHAR(100) NOT NULL,
-    CCCD VARCHAR(12) NOT NULL UNIQUE,
-    SDT VARCHAR(15) NOT NULL UNIQUE,
-    CONSTRAINT fk_hso_taikhoan FOREIGN KEY (ID_TaiKhoan) REFERENCES TaiKhoan(ID_TaiKhoan)
+    Email VARCHAR(100) NOT NULL,
+    NgaySinh DATE NOT NULL,
+    GioiTinh ENUM('Nam','Nữ') NOT NULL,
+    CCCD VARCHAR(12) UNIQUE NOT NULL,
+    SDT VARCHAR(15) UNIQUE NOT NULL,
+    FOREIGN KEY (ID_TaiKhoan) REFERENCES TaiKhoan(ID_TaiKhoan)
 );
 
--- 8. SINH VIEN
+-- 8. SinhVien
 CREATE TABLE SinhVien (
     MaSV VARCHAR(10) PRIMARY KEY,
     HoTen VARCHAR(100) NOT NULL,
     NgaySinh DATE NOT NULL,
-    Email VARCHAR(100) NOT NULL UNIQUE,
+    Email VARCHAR(100) UNIQUE NOT NULL,
     ID_TaiKhoan INT UNIQUE,
     MaLop VARCHAR(11),
-    MaHSO INT NULL,
-    CONSTRAINT fk_sv_taikhoan FOREIGN KEY (ID_TaiKhoan) REFERENCES TaiKhoan(ID_TaiKhoan),
-    CONSTRAINT fk_sv_lop FOREIGN KEY (MaLop) REFERENCES Lop(MaLop),
-    CONSTRAINT fk_sv_hso FOREIGN KEY (MaHSO) REFERENCES HSO_XETTUYEN(MaHSO)
-);
-
--- 9. PHUONG THUC XET TUYEN
-CREATE TABLE PT_XetTuyen (
-    MaPTXT VARCHAR(5) PRIMARY KEY,
-    MaNganh VARCHAR(4),
-    PhuongThuc VARCHAR(100) NOT NULL,
-    Diem DECIMAL(4,2) NOT NULL,
-    TrangThai ENUM('Chờ duyệt','Trúng tuyển','Từ chối') DEFAULT 'Chờ duyệt',
     MaHSO INT,
-    MaAdmin INT NULL,
-    CONSTRAINT fk_ptxt_nganh FOREIGN KEY (MaNganh) REFERENCES Nganh(MaNganh),
-    CONSTRAINT fk_ptxt_hso FOREIGN KEY (MaHSO) REFERENCES HSO_XETTUYEN(MaHSO),
-    CONSTRAINT fk_ptxt_admin FOREIGN KEY (MaAdmin) REFERENCES QuanTri(MaAdmin)
+    FOREIGN KEY (ID_TaiKhoan) REFERENCES TaiKhoan(ID_TaiKhoan),
+    FOREIGN KEY (MaLop) REFERENCES Lop(MaLop),
+    FOREIGN KEY (MaHSO) REFERENCES HSO_XETTUYEN(MaHSO)
 );
 
--- 10. KET QUA HOC TAP
+-- 9. PT_XetTuyen
+CREATE TABLE PT_XetTuyen (
+    MaPTXT INT AUTO_INCREMENT PRIMARY KEY,
+    MaHSO INT NOT NULL,
+    MaNganh VARCHAR(4) NOT NULL,
+    LoaiPT ENUM('Đánh giá năng lực','Học bạ kết hợp IELTS','Điểm thi THPT') NOT NULL,
+    Diem DECIMAL(4,2) NOT NULL,
+    DiemIELTS DECIMAL(2,1),
+    FileDGNL VARCHAR(255),
+    FileHocBa VARCHAR(255),
+    FileIELTS VARCHAR(255),
+    TrangThai ENUM('Chờ duyệt','Trúng tuyển','Từ chối') DEFAULT 'Chờ duyệt',
+    MaAdmin INT,
+    FOREIGN KEY (MaHSO) REFERENCES HSO_XETTUYEN(MaHSO),
+    FOREIGN KEY (MaNganh) REFERENCES Nganh(MaNganh),
+    FOREIGN KEY (MaAdmin) REFERENCES QuanTri(MaAdmin)
+);
+
+-- 10. KQ_HocTap
 CREATE TABLE KQ_HocTap (
     MaSV VARCHAR(10),
     MaMH VARCHAR(7),
     Diem DECIMAL(4,2) NOT NULL,
     PRIMARY KEY (MaSV, MaMH),
-    CONSTRAINT fk_kq_sv FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV),
-    CONSTRAINT fk_kq_mh FOREIGN KEY (MaMH) REFERENCES MonHoc(MaMH)
+    FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV),
+    FOREIGN KEY (MaMH) REFERENCES MonHoc(MaMH)
 );
 
--- 11. TOT NGHIEP
+-- 11. TotNghiep
 CREATE TABLE TotNghiep (
     MaSV VARCHAR(10) PRIMARY KEY,
     GPA DECIMAL(4,2) NOT NULL,
     XepLoai ENUM('Xuất sắc','Giỏi','Khá','Trung bình','Yếu') NOT NULL,
     CHECK (GPA >= 0 AND GPA <= 4.0),
-    CONSTRAINT fk_tn_sv FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV)
+    FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV)
 );
 
--- 12. THONG BAO
+-- 12. ThongBao
 CREATE TABLE ThongBao (
     MaTB INT AUTO_INCREMENT PRIMARY KEY,
     NoiDung VARCHAR(255) NOT NULL,
     NgayGui DATETIME DEFAULT CURRENT_TIMESTAMP,
     MaAdmin INT,
-    CONSTRAINT fk_tb_admin FOREIGN KEY (MaAdmin) REFERENCES QuanTri(MaAdmin)
+    FOREIGN KEY (MaAdmin) REFERENCES QuanTri(MaAdmin)
 );
 
--- 13. THONG BAO NGUOI NHAN
+-- 13. TB_NguoiNhan
 CREATE TABLE TB_NguoiNhan (
     MaTBNN INT AUTO_INCREMENT PRIMARY KEY,
     MaTB INT NOT NULL,
     ID_TaiKhoan INT NOT NULL,
     TrangThaiDoc BOOLEAN DEFAULT FALSE,
-    ThoiGianDoc DATETIME NULL,
-    CONSTRAINT fk_tbnn_tb FOREIGN KEY (MaTB) REFERENCES ThongBao(MaTB),
-    CONSTRAINT fk_tbnn_tk FOREIGN KEY (ID_TaiKhoan) REFERENCES TaiKhoan(ID_TaiKhoan)
+    ThoiGianDoc DATETIME,
+    FOREIGN KEY (MaTB) REFERENCES ThongBao(MaTB),
+    FOREIGN KEY (ID_TaiKhoan) REFERENCES TaiKhoan(ID_TaiKhoan)
 );
 
--- 14. VIEC LAM SINH VIEN
+-- 14. ViecLamSinhVien
 CREATE TABLE ViecLamSinhVien (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     MaSV VARCHAR(10) NOT NULL,
@@ -140,19 +141,31 @@ CREATE TABLE ViecLamSinhVien (
     DiaChiCongTy VARCHAR(255),
     ThoiGianBatDau DATE,
     NgayCapNhat DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_vlsv_sv FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV)
+    FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV)
 );
--- 15. Bảng Tin nhắn (Thêm mới theo yêu cầu của bạn)
+
+-- 15. TinNhan
 CREATE TABLE TinNhan (
     MaTinNhan INT AUTO_INCREMENT PRIMARY KEY,
     ID_NguoiGui INT NOT NULL,
-    ID_NguoiNhan INT  NULL,
-    NoiDung TEXT NOT NULL,
+    ID_NguoiNhan INT,
+    NoiDung VARCHAR(100) NOT NULL,
     ThoiGianGui DATETIME DEFAULT CURRENT_TIMESTAMP,
     DaDoc BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (ID_NguoiGui) REFERENCES TaiKhoan(ID_TaiKhoan),
     FOREIGN KEY (ID_NguoiNhan) REFERENCES TaiKhoan(ID_TaiKhoan)
 );
 
-UPDATE TinNhan SET ThoiGianGui = NOW() WHERE ThoiGianGui IS NULL OR ThoiGianGui = 0;
-
+-- 16. ReviewNganh
+CREATE TABLE ReviewNganh (
+    MaReview INT AUTO_INCREMENT PRIMARY KEY,
+    MaSV VARCHAR(10) NOT NULL,
+    MaNganh VARCHAR(4) NOT NULL,
+    NoiDung VARCHAR(255),
+    ThoiGian DATETIME DEFAULT CURRENT_TIMESTAMP,
+    TrangThai ENUM('Chờ duyệt','Đã hiển thị','Vi phạm') DEFAULT 'Chờ duyệt',
+    MaAdmin INT,
+    FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV),
+    FOREIGN KEY (MaNganh) REFERENCES Nganh(MaNganh),
+    FOREIGN KEY (MaAdmin) REFERENCES QuanTri(MaAdmin)
+);
