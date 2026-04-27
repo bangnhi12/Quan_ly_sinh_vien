@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+ <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+             <div class="mb-4">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm">
+            <i class="bi bi-arrow-left-circle-fill me-1"></i> Quay lại Dashboard
+        </a>
+    </div>
+<div class="container mt-4">
+    <h2 class="mb-4">Cấu hình Tổ hợp môn cho từng Ngành</h2>
+
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Danh sách Ngành học</h5>
+                </div>
+                <div class="list-group list-group-flush" id="nganh-list">
+                    {% for n in ds_nganh %}
+                    <button type="button" 
+                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                            onclick="selectNganh('{{ n.MaNganh }}', '{{ n.TenNganh }}')">
+                        {{ n.TenNganh }}
+                        <span class="badge bg-secondary rounded-pill">{{ n.ds_to_hop|length }}</span>
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div id="form-container" class="card shadow d-none">
+                <form action="{{ url_for('admin.gan_to_hop') }}" method="POST">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Gán tổ hợp cho: <span id="display-ten-nganh"></span></h5>
+                    </div>
+                    <div class="card-body">
+                        <input type="hidden" name="ma_nganh" id="input-ma-nganh">
+                        
+                        <p class="text-muted small mb-3">Tích chọn các tổ hợp môn mà ngành này chấp nhận xét tuyển:</p>
+                        
+                        <div class="row">
+                            {% for th in ds_to_hop %}
+                            <div class="col-md-6 mb-2">
+                                <div class="form-check p-2 border rounded">
+                                    <input class="form-check-input ms-1" type="checkbox" 
+                                           name="to_hop_ids" value="{{ th.MaToHop }}" 
+                                           id="th{{ th.MaToHop }}">
+                                    <label class="form-check-label ms-2" for="th{{ th.MaToHop }}">
+                                        <strong>{{ th.TenToHop }}</strong><br>
+                                        <small class="text-muted">{{ th.CacMon }}</small>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Lưu cấu hình
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div id="empty-state" class="alert alert-info text-center py-5">
+                <i class="fas fa-arrow-left fa-2x mb-3"></i>
+                <p>Vui lòng chọn một ngành ở danh sách bên trái để cấu hình tổ hợp môn.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Hàm xử lý khi chọn một ngành từ danh sách
+    function selectNganh(maNganh, tenNganh) {
+        // Hiện form, ẩn thông báo trống
+        document.getElementById('form-container').classList.remove('d-none');
+        document.getElementById('empty-state').classList.add('d-none');
+
+        // Hiển thị tên ngành và gán vào input hidden
+        document.getElementById('display-ten-nganh').innerText = tenNganh;
+        document.getElementById('input-ma-nganh').value = maNganh;
+
+        // Reset tất cả checkbox về trạng thái chưa chọn
+        const checkboxes = document.querySelectorAll('input[name="to_hop_ids"]');
+        checkboxes.forEach(cb => cb.checked = false);
+
+        // (Tùy chọn nâng cao) Bạn có thể dùng Fetch API ở đây để tự động 
+        // tích vào những tổ hợp đã được gán sẵn cho ngành này trong database.
+    }
+</script>
+
+<style>
+    .list-group-item-action { cursor: pointer; }
+    .form-check:hover { background-color: #f8f9fa; }
+</style>
+{% endblock %}

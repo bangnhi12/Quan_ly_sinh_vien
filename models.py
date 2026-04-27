@@ -68,7 +68,7 @@ class Nganh(db.Model):
     TenNganh: Mapped[str] = mapped_column(String(100), nullable=False)
     MaKhoa: Mapped[str] = mapped_column(ForeignKey("Khoa.MaKhoa"))
     khoa = relationship("Khoa", back_populates="nganhs")
-
+    ds_to_hop = relationship("ToHopMon", secondary="Nganh_ToHop", backref="ds_nganh")   
 class Lop(db.Model):
     __tablename__ = "Lop"
     MaLop: Mapped[str] = mapped_column(String(11), primary_key=True)
@@ -118,12 +118,20 @@ class SinhVien(db.Model):
     tai_khoan = relationship("TaiKhoan", back_populates="sinh_vien")
     tot_nghiep = relationship("TotNghiep", backref="sinh_vien", uselist=False)
 
+class ToHopMon(db.Model):
+    __tablename__ = "ToHopMon"
+    MaToHop: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True) # VD: A00, A01, D01
+    TenToHop: Mapped[str] = mapped_column(String(100), nullable=False) # VD: Toán, Lý, Hóa
+    CacMon: Mapped[str] = mapped_column(String(255), nullable=False)
+    def __repr__(self):
+        return f"<ToHopMon {self.MaToHop}>"
 # --- 4. Các bảng Nghiệp vụ (Xét tuyển, Kết quả, Tốt nghiệp) ---
 class PT_XetTuyen(db.Model):
     __tablename__ = "PT_XetTuyen"
     MaPTXT: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     MaHSO: Mapped[int] = mapped_column(ForeignKey("HSO_XETTUYEN.MaHSO"), nullable=False)
     MaNganh: Mapped[str] = mapped_column(ForeignKey("Nganh.MaNganh"), nullable=False)
+    MaToHop: Mapped[int] = mapped_column(ForeignKey("ToHopMon.MaToHop"), nullable=True)
     LoaiPT: Mapped[LoaiPhuongThuc] = mapped_column(
         Enum(LoaiPhuongThuc, values_callable=lambda x: [e.value for e in x]), 
         nullable=False
@@ -140,6 +148,17 @@ class PT_XetTuyen(db.Model):
     MaAdmin: Mapped[int] = mapped_column(ForeignKey("QuanTri.MaAdmin"), nullable=True)
     ho_so = relationship("HSO_XETTUYEN", backref=db.backref("ds_dang_ky", lazy=True))
     nganh = relationship("Nganh")
+    to_hop = relationship("ToHopMon")
+    chi_tiet_diem = relationship("ChiTietDiemHocBa", back_populates="pt_xettuyen", cascade="all, delete-orphan")
+
+class ChiTietDiemHocBa (db.Model):
+    __tablename__ = "ChiTietDiemHocBa"
+    ID: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    MaPTXT: Mapped[int]=mapped_column(ForeignKey("PT_XetTuyen.MaPTXT"),nullable=False)
+    TenMon: Mapped[str] = mapped_column(String(50), nullable=False)
+    DiemMon: Mapped[float] = mapped_column(Numeric(4,2), nullable=False)
+
+    pt_xettuyen = relationship("PT_XetTuyen", back_populates="chi_tiet_diem")
 
 class KQ_HocTap(db.Model):
     __tablename__ = "KQ_HocTap"
@@ -212,4 +231,9 @@ class ReviewNganh (db.Model):
     sinh_vien = relationship("SinhVien", backref=db.backref("reviews", lazy=True))
     nganh = relationship("Nganh", backref=db.backref("ds_reviews", lazy=True))
     admin = relationship("QuanTri", backref=db.backref("ds_review_da_duyet", lazy=True))
-    
+
+# Bảng trung gian nối Ngành và Tổ hợp
+class NganhToHop(db.Model):
+    __tablename__ = "Nganh_ToHop"
+    MaNganh: Mapped[str] = mapped_column(ForeignKey("Nganh.MaNganh"), primary_key=True)
+    MaToHop: Mapped[int] = mapped_column(ForeignKey("ToHopMon.MaToHop"), primary_key=True)

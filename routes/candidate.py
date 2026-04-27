@@ -70,44 +70,103 @@ def save_uploaded_file(file, prefix, hso_id):
         file.save(os.path.join(UPLOAD_PATH, filename))
         return filename
     return None
+import os
+import uuid
+from werkzeug.utils import secure_filename
 
-@candidate_bp.route('/regadmission', methods=['GET', 'POST'])
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+@candidate_bp.route("/register_admission", methods=["GET", "POST"])
 @login_required
 def register_admission():
-    hso = HSO_XETTUYEN.query.filter_by(ID_TaiKhoan=current_user.id).first()
-    
-    if not hso:
-        flash("Bạn phải cập nhật thông tin cá nhân trước khi đăng ký xét tuyển!", "warning")
-        return redirect(url_for('candidate.update_profile'))
+    if request.method == "POST":
 
-    if request.method == 'POST':
+        loai = request.form.get("loai_pt")
+        ma_nganh = request.form.get("ma_nganh")
+        ma_to_hop = request.form.get("ma_to_hop")
+
         try:
-            loai_pt_str = request.form.get('loai_pt')
-            new_reg = PT_XetTuyen(
-                MaHSO=hso.MaHSO,
-                MaNganh=request.form.get('ma_nganh'),
-                LoaiPT=LoaiPhuongThuc[loai_pt_str],
-                Diem=request.form.get('diem')
-            )
+            loai_enum = LoaiPhuongThuc[loai]
+        except KeyError:
+            flash("Loại phương thức không hợp lệ", "danger")
+            return redirect(url_for("candidate.register_admission"))
+        if not ma_to_hop or ma_to_hop == "":
+             ma_to_hop = None
+        pt = PT_XetTuyen(
+            MaHSO=current_user.hso_xettuyen.MaHSO,
+            MaNganh=ma_nganh,
+            MaToHop=ma_to_hop,
+            LoaiPT=loai_enum
+        )
 
-            if loai_pt_str == 'DGNL':
-                new_reg.FileDGNL = save_uploaded_file(request.files.get('file_dgnl'), "DGNL", hso.MaHSO)
-            
-            elif loai_pt_str == 'HOCBA_IELTS':
-                new_reg.DiemIELTS = request.form.get('diem_ielts')
-                new_reg.FileHocBa = save_uploaded_file(request.files.get('file_hocba'), "HB", hso.MaHSO)
-                new_reg.FileIELTS = save_uploaded_file(request.files.get('file_ielts'), "IELTS", hso.MaHSO)
+        # ================= THPT (DYNAMIC) =================
+        if loai == "THPT":
+            diem_list = [
+                float(v) for k, v in request.form.items()
+                if k.startswith("diem_") and v.strip() != ""
+            ]
+            pt.Diem = sum(diem_list)
 
-            db.session.add(new_reg)
-            db.session.commit()
-            flash("Gửi hồ sơ xét tuyển thành công! Vui lòng chờ kết quả duyệt.", "success")
-            return redirect(url_for('candidate.dashboard'))
-        except Exception as e:
-            db.session.rollback()
-            flash(f"Có lỗi xảy ra: {str(e)}", "danger")
-    ds_nganh = Nganh.query.all()
-    return render_template('candidate/register_admission.html', ds_nganh=ds_nganh)
+        # ================= HỌC BẠ + IELTS =================
+        elif loai == "HOCBA_IELTS":
 
+            diem_list = [
+                float(v) for k, v in request.form.items()
+                if k.startswith("diem_") and v.strip() != ""
+            ]
+            pt.Diem = sum(diem_list)
+            pt.DiemIELTS = float(request.form.get("ielts", 0))
+
+            f1 = request.files.get("file_hocba")
+            if f1 and f1.filename:
+                path = os.path.join("uploads", f1.filename)
+                f1.save(path)
+                pt.FileHocBa = path
+
+            f2 = request.files.get("file_ielts")
+            if f2 and f2.filename:
+                path = os.path.join("uploads", f2.filename)
+                f2.save(path)
+                pt.FileIELTS = path
+
+        # ================= DGNL =================
+        elif loai == "DGNL":
+
+            pt.Diem = float(request.form.get("dgnl", 0))
+
+            f = request.files.get("file_dgnl")
+            if f and f.filename:
+                path = os.path.join("uploads", f.filename)
+                f.save(path)
+                pt.FileDGNL = path
+
+        db.session.add(pt)
+        db.session.commit()
+
+        flash("Đăng ký thành công", "success")
+        return redirect(url_for("candidate.register_admission"))
+
+    return render_template(
+        "candidate/register_admission.html",
+        ds_nganh=Nganh.query.all(),
+        ds_tohop=ToHopMon.query.all()
+    )
+from flask import jsonify
+
+@candidate_bp.route('/get_mon_tohop/<int:id>')
+def get_mon_tohop(id):
+    # Lấy tổ hợp từ DB
+    tohop = ToHopMon.query.get(id)
+    
+    if tohop and tohop.CacMon:
+        # Tách chuỗi "Toán, Lý, Hóa" thành list ["Toán", "Lý", "Hóa"]
+        ds_mon = [m.strip() for m in tohop.CacMon.split(',')]
+        return jsonify({"mon": ds_mon})
+    
+    # Nếu không tìm thấy hoặc dữ liệu trống
+    return jsonify({"mon": []})
 @candidate_bp.route('/result', methods=['GET'])
 @login_required
 def view_results():

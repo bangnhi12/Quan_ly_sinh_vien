@@ -1,205 +1,303 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="mb-3">
-        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm">
-            <i class="bi bi-arrow-left me-1"></i> Quay lại Dashboard
-        </a>
-    </div>
-
+<div class="container-fluid mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold text-dark"><i class="bi bi-person-badge-fill me-2 text-danger"></i>QUẢN LÝ XÉT TUYỂN</h3>
-        <span class="badge bg-dark px-3 py-2">Tổng số: {{ applications|length }} hồ sơ</span>
+        <h2 class="text-primary"><i class="fas fa-user-check me-2"></i>Duyệt Thí Sinh Tự Động</h2>
+        <span class="badge bg-dark">Năm học: {{ datetime.now().year }}</span>
     </div>
 
-    <div class="card shadow-sm border-0 rounded-3 mb-4">
-        <div class="card-body p-4">
-            <h6 class="fw-bold mb-3"><i class="bi bi-funnel-fill me-2"></i>Bộ lọc tìm kiếm</h6>
-            <form method="GET" action="{{ url_for('admin.view_all_applications') }}" class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">Ngành đào tạo</label>
-                    <select name="ma_nganh" class="form-select bg-light border-0">
-                        <option value="">-- Tất cả ngành --</option>
-                        {% for n in nganhs %}
-                        <option value="{{ n.MaNganh }}" {{ 'selected' if request.args.get('ma_nganh') == n.MaNganh }}>
-                            {{ n.TenNganh }}
-                        </option>
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Thiết lập chỉ tiêu duyệt trúng tuyển</h5>
+        </div>
+        <div class="card-body bg-light">
+            <form action="{{ url_for('admin.duyet_thi_sinh') }}" method="POST" class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">1. Chọn Ngành xét tuyển</label>
+                    <select name="ma_nganh" id="filter_nganh" class="form-select form-select-lg" required>
+                        <option value="" selected disabled>-- Danh sách ngành --</option>
+                        {% for nganh in ds_nganh %}
+                        <option value="{{ nganh.MaNganh }}">{{ nganh.TenNganh }} ({{ nganh.MaNganh }})</option>
                         {% endfor %}
                     </select>
                 </div>
-
                 <div class="col-md-3">
-                    <label class="form-label small fw-bold">Phương thức</label>
-                    <select name="phuong_thuc" class="form-select border-0 bg-light shadow-none">
-                        <option value="">Tất cả phương thức</option>
-                        {% for m_name in methods %}
-                        <option value="{{ m_name }}" {{ 'selected' if request.args.get('phuong_thuc') == m_name }}>
-                            {% if m_name == 'DGNL' %} Đánh giá năng lực
-                            {% elif m_name == 'HOCBA_IELTS' %} Học bạ + IELTS
-                            {% elif m_name == 'THPT' %} Điểm thi THPT
-                            {% else %} {{ m_name }}
-                            {% endif %}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <label class="form-label fw-bold">2. Phương thức</label>
+                <select name="loai_pt" id="filter_pt" class="form-select form-select-lg" required>
+                    <option value="Học bạ kết hợp IELTS">Xét Học Bạ kết hợp IELTS</option>
+                    <option value="Điểm thi THPT">Xét Điểm THPT</option>
+                    <option value="Đánh giá năng lực">Đánh giá năng lực</option>
+                </select>
                 </div>
-
                 <div class="col-md-2">
-                    <label class="form-label small fw-bold">Điểm tối thiểu</label>
-                    <input type="number" step="0.01" name="min_diem" class="form-control bg-light border-0" 
-                           value="{{ request.args.get('min_diem', '') }}" placeholder="Ví dụ: 25.0">
+                    <label class="form-label fw-bold">3. Số chỉ tiêu</label>
+                    <input type="number" name="chi_tieu" class="form-control form-select-lg" min="1" placeholder="Số lượng" required>
                 </div>
-
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold">Trạng thái</label>
-                    <select name="status" class="form-select bg-light border-0">
-                        <option value="">-- Tất cả --</option>
-                        <option value="Chờ duyệt" {{ 'selected' if request.args.get('status') == 'Chờ duyệt' }}>Chờ duyệt</option>
-                        <option value="Trúng tuyển" {{ 'selected' if request.args.get('status') == 'Trúng tuyển' }}>Trúng tuyển</option>
-                        <option value="Từ chối" {{ 'selected' if request.args.get('status') == 'Từ chối' }}>Từ chối</option>
-                    </select>
-                </div>
-
-                <div class="col-md-2 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-danger w-100 fw-bold">Lọc</button>
-                    <a href="{{ url_for('admin.view_all_applications') }}" class="btn btn-outline-secondary w-100">Xóa</a>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm" onclick="return confirm('Hệ thống sẽ duyệt từ cao xuống thấp và bỏ qua những người đã trúng tuyển ngành khác. Xác nhận?')">
+                        <i class="fas fa-bolt me-1"></i> Thực thi
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div class="card shadow-sm border-0 rounded-3">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-danger text-dark">
-                    <tr>
-                        <th class="ps-4">Thí sinh</th>
-                        <th class="text-center">Hồ sơ</th> <th>Ngành đăng ký</th>
-                        <th>Phương thức</th>
-                        <th>Điểm xét</th>
-                        <th>Minh chứng</th>
-                        <th>Trạng thái</th>
-                        <th class="text-center pe-4">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for pt, ho_ten, ten_nganh in applications %}
-                    <tr>
-                        <td class="ps-4">
-                            <div class="fw-bold text-dark">{{ ho_ten }}</div>
-                            <small class="text-muted">Mã HS: #{{ pt.MaHSO }}</small>
-                        </td>
-
-                        <td class="text-center">
-                            <a href="javascript:void(0)" class="text-primary fs-5" data-bs-toggle="modal" data-bs-target="#modalHso{{ pt.MaPTXT }}" title="Xem hồ sơ cá nhân">
-                                <i class="bi bi-eye-fill"></i>
-                            </a>
-
-                            <div class="modal fade" id="modalHso{{ pt.MaPTXT }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content border-0 shadow">
-                                        <div class="modal-header bg-danger text-white border-0">
-                                            <h5 class="modal-title fw-bold">THÔNG TIN THÍ SINH</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body p-4 text-start">
-                                            <div class="row g-3">
-                                                <div class="col-6">
-                                                    <label class="small text-muted d-block">Họ và tên</label>
-                                                    <span class="fw-bold">{{ ho_ten }}</span>
-                                                </div>
-                                                <div class="col-6">
-                                                    <label class="small text-muted d-block">Số CCCD</label>
-                                                    <span class="fw-bold">{{ pt.ho_so.CCCD }}</span>
-                                                </div>
-                                                <div class="col-12"><hr class="my-1 opacity-25"></div>
-                                                <div class="col-6">
-                                                    <label class="small text-muted d-block">Điện thoại</label>
-                                                    <span class="fw-bold">{{ pt.ho_so.SDT }}</span>
-                                                </div>
-                                                <div class="col-6">
-                                                    <label class="small text-muted d-block">Giới tính</label>
-                                                    <span class="fw-bold text-capitalize">{{ pt.ho_so.GioiTinh.value }}</span>
-                                                </div>
-                                                <div class="col-12">
-                                                    <label class="small text-muted d-block">Email</label>
-                                                    <span class="fw-bold">{{ pt.ho_so.Email }}</span>
-                                                </div>
-                                                <div class="col-12">
-                                                    <label class="small text-muted d-block">Ngày sinh</label>
-                                                    <span class="fw-bold">{{ pt.ho_so.NgaySinh.strftime('%d/%m/%Y') if pt.ho_so.NgaySinh else 'N/A' }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-
-                        <td>
-                            <div class="small fw-bold">{{ ten_nganh }}</div>
-                            <small class="text-muted">{{ pt.MaNganh }}</small>
-                        </td>
-                        <td>
-                            <span class="badge bg-light text-dark border">{{ pt.LoaiPT.value }}</span>
-                        </td>
-                        <td>
-                            <span class="text-danger fw-bold fs-5">{{ pt.Diem }}</span>
-                            {% if pt.DiemIELTS %}
-                                <div class="small text-muted">IELTS: <strong>{{ pt.DiemIELTS }}</strong></div>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="d-flex flex-column gap-1">
-                                {% if pt.FileDGNL %}
-                                <a href="{{ url_for('static', filename='uploads/hoso/' + pt.FileDGNL) }}" target="_blank" class="btn btn-sm btn-outline-primary py-0 small"><i class="bi bi-file-earmark-pdf"></i> DGNL</a>
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white pt-3">
+            <ul class="nav nav-pills card-header-pills" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pills-pending-tab" data-bs-toggle="pill" data-bs-target="#pills-pending" type="button" role="tab">
+                        <i class="fas fa-clock me-1"></i> Chờ duyệt
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-danger" id="pills-passed-tab" data-bs-toggle="pill" data-bs-target="#pills-passed" type="button" role="tab">
+                        <i class="fas fa-check-double me-1"></i> Đã trúng tuyển
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body tab-content" id="pills-tabContent">
+            <div class="tab-pane fade show active" id="pills-pending" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mã HSO</th>
+                                <th>Họ Tên</th>
+                                <th>Ngành</th>
+                                <th>Điểm</th>
+                                <th>Trạng Thái</th>
+                                <th class="text-center">Chi tiết</th>
+                            </tr>
+                        </thead>
+                        <tbody id="candidate-table-body">
+                            {% for hs in ds_tong_quat %}
+                                {% if hs.TrangThai.name == 'CHO_DUYET' %}
+                                    {% set da_trung_tuyen_khac = ds_tong_quat | selectattr("MaHSO", "equalto", hs.MaHSO) | selectattr("TrangThai.name", "equalto", "TRUNG_TUYEN") | list %}
+                                    <tr {% if da_trung_tuyen_khac %} class="table-light text-muted" {% endif %}>
+                                        <td>{{ hs.MaHSO }}</td>
+                                        <td>{{ hs.ho_so.HoTen }}</td>
+                                        <td>{{ hs.MaNganh }}</td>
+                                        <td class="fw-bold text-primary">{{ hs.Diem }}</td>
+                                        <td>
+                                            {% if da_trung_tuyen_khac %}
+                                                <span class="badge rounded-pill bg-secondary">Đã trúng tuyển ngành khác</span>
+                                            {% else %}
+                                                <span class="badge rounded-pill bg-warning text-dark">Đang chờ duyệt</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#detailModal{{ hs.MaPTXT }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
                                 {% endif %}
-                                {% if pt.FileHocBa %}
-                                <a href="{{ url_for('static', filename='uploads/hoso/' + pt.FileHocBa) }}" target="_blank" class="btn btn-sm btn-outline-primary py-0 small"><i class="bi bi-journal-text"></i> Học bạ</a>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pills-passed" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-success">
+                            <tr>
+                                <th>Mã HSO</th>
+                                <th>Họ Tên</th>
+                                <th>Ngành Trúng Tuyển</th>
+                                <th>Điểm</th>
+                                <th>Ngày Duyệt</th>
+                                <th class="text-center">Chi tiết</th>
+                            </tr>
+                        </thead>
+                        <tbody id="passed-table-body">
+                            {% for hs in ds_tong_quat %}
+                                {% if hs.TrangThai.name == 'TRUNG_TUYEN' %}
+                                <tr>
+                                    <td>{{ hs.MaHSO }}</td>
+                                    <td>{{ hs.ho_so.HoTen }}</td>
+                                    <td><span class="fw-bold">{{ hs.MaNganh }}</span></td>
+                                    <td class="text-success fw-bold">{{ hs.Diem }}</td>
+                                    <td>{{ datetime.now().strftime('%d/%m/%Y') }}</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#detailModal{{ hs.MaPTXT }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
                                 {% endif %}
-                                {% if pt.FileIELTS %}
-                                <a href="{{ url_for('static', filename='uploads/hoso/' + pt.FileIELTS) }}" target="_blank" class="btn btn-sm btn-outline-primary py-0 small"><i class="bi bi-award"></i> IELTS</a>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            {% if pt.TrangThai.value == 'Chờ duyệt' %}
-                                <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i> Chờ duyệt</span>
-                            {% elif pt.TrangThai.value == 'Trúng tuyển' %}
-                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Trúng tuyển</span>
-                            {% else %}
-                                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> Từ chối</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-center pe-4">
-                            {% if pt.TrangThai.value == 'Chờ duyệt' %}
-                            <div class="btn-group">
-                                <a href="{{ url_for('admin.approve_admission', ma_ptxt=pt.MaPTXT, action='accept') }}" 
-                                   class="btn btn-success btn-sm px-3" onclick="return confirm('Xác nhận trúng tuyển cho thí sinh này?')">
-                                    Duyệt
-                                </a>
-                                <a href="{{ url_for('admin.approve_admission', ma_ptxt=pt.MaPTXT, action='reject') }}" 
-                                   class="btn btn-outline-danger btn-sm px-3" onclick="return confirm('Từ chối hồ sơ này?')">
-                                    Loại
-                                </a>
-                            </div>
-                            {% else %}
-                            <button class="btn btn-light btn-sm text-muted" disabled>Đã xử lý</button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="8" class="text-center py-5">
-                            <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="80" class="opacity-25 mb-3"><br>
-                            <span class="text-muted">Không tìm thấy hồ sơ nào phù hợp với bộ lọc!</span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+{% for hs in ds_tong_quat %}
+<div class="modal fade" id="detailModal{{ hs.MaPTXT }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-id-card me-2"></i>Hồ sơ thí sinh: {{ hs.ho_so.HoTen }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4">
+                    <div class="col-md-6 border-end">
+                        <h6 class="fw-bold text-secondary mb-3 text-uppercase">Thông tin cá nhân</h6>
+                        <table class="table table-sm table-borderless">
+                            <tr><td class="text-muted">Mã hồ sơ:</td><td class="fw-bold">{{ hs.MaHSO }}</td></tr>
+                            <tr>
+                                <td class="text-muted">Giới tính:</td>
+                                <td>
+                                    {% if hs.ho_so.GioiTinh.name == 'NU' %} Nữ
+                                    {% elif hs.ho_so.GioiTinh.name == 'NAM' %} Nam
+                                    {% else %} {{ hs.ho_so.GioiTinh.value }} {% endif %}
+                                </td>
+                            </tr>
+                            <tr><td class="text-muted">Ngày sinh:</td><td>{{ hs.ho_so.NgaySinh.strftime('%d/%m/%Y') }}</td></tr>
+                            <tr><td class="text-muted">Số CCCD:</td><td>{{ hs.ho_so.CCCD }}</td></tr>
+                            <tr><td class="text-muted">Email:</td><td>{{ hs.ho_so.Email }}</td></tr>
+                            <tr><td class="text-muted">Điện thoại:</td><td>{{ hs.ho_so.SDT }}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-secondary mb-3 text-uppercase">Thông tin xét tuyển</h6>
+                        <div class="p-3 bg-light rounded shadow-sm mb-3">
+                            <p class="mb-1">Ngành: <strong>{{ hs.nganh.TenNganh }}</strong></p>
+                            <p class="mb-1">Phương thức: <strong>
+                                {% if hs.LoaiPT.name == 'HOCBA_IELTS' %} Xét Học bạ + IELTS
+                                {% elif hs.LoaiPT.name == 'HOCBA' %} Xét Học bạ
+                                {% elif hs.LoaiPT.name == 'THPT' %} Xét điểm THPT
+                                {% else %} {{ hs.LoaiPT.value }} {% endif %}
+                            </strong></p>
+                            <p class="mb-0">Điểm xét tuyển: <strong class="fs-4 text-danger">{{ hs.Diem }}</strong></p>
+                        </div>
+                        <p class="mb-0 text-danger">Điểm: <strong class="fs-4">{{ hs.Diem }}</strong></p>
+                            {% if hs.DiemIELTS %}
+                                <p class="mb-0 text-primary">IELTS: <strong>{{ hs.DiemIELTS }}</strong></p>
+                            {% endif %}
+                        </div>
+                        
+                        <h6 class="fw-bold text-secondary mb-2 text-uppercase small">Minh chứng đính kèm</h6>
+                        
+                        {# LOGIC HIỂN THỊ FILE TƯƠNG ỨNG #}
+                        {% set file_name = "" %}
+                        {% if hs.LoaiPT.name == 'HOCBA' and hs.FileHocBa %}
+                            {% set file_name = hs.FileHocBa %}
+                        {% elif hs.LoaiPT.name == 'HOCBA_IELTS' and hs.FileIELTS %}
+                            {% set file_name = hs.FileIELTS %}
+                        {% elif hs.LoaiPT.name == 'DGNL' and hs.FileDGNL %}
+                            {% set file_name = hs.FileDGNL %}
+                        {% endif %}
+
+                        {% if file_name %}
+                            <a href="{{ url_for('admin.view_file', filename=file_name) }}" target="_blank" class="btn btn-dark w-100 shadow-sm">
+                                <i class="fas fa-file-pdf me-2"></i>Xem tệp tin minh chứng
+                            </a>
+                            <small class="text-muted d-block mt-1 text-center">Tên file: {{ file_name }}</small>
+                        {% else %}
+                            <div class="alert alert-warning py-2 mb-0 small">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Không tìm thấy file minh chứng.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng cửa sổ</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+<script>
+ document.querySelectorAll('#filter_nganh, #filter_pt').forEach(select => {
+    select.addEventListener('change', function() {
+        const nganh = document.getElementById('filter_nganh').value;
+        const pt = document.getElementById('filter_pt').value;
+        
+        if (nganh && pt) {
+            // Lấy cả 2 body bảng
+            const pendingBody = document.getElementById('candidate-table-body');
+            const passedBody = document.getElementById('passed-table-body');
+            
+            // Hiển thị trạng thái đang tải cho cả 2
+            pendingBody.innerHTML = '<tr><td colspan="6" class="text-center">Đang lọc...</td></tr>';
+            passedBody.innerHTML = '<tr><td colspan="6" class="text-center">Đang lọc...</td></tr>';
+
+            const url = `/admin/api/get_candidates?ma_nganh=${nganh}&loai_pt=${encodeURIComponent(pt)}`;
+            
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    // 1. Cập nhật bảng CHỜ DUYỆT
+                    let htmlPending = '';
+                    if (data.pending.length === 0) {
+                        htmlPending = '<tr><td colspan="6" class="text-center text-muted">Không có dữ liệu.</td></tr>';
+                    } else {
+                        data.pending.forEach(hs => {
+                            // Dùng màu vàng (warning) cho chờ duyệt, xám (secondary) nếu đỗ ngành khác
+                            htmlPending += renderRow(hs, hs.LopMau || 'warning', true);
+                        });
+                    }
+                    pendingBody.innerHTML = htmlPending;
+
+                    // 2. Cập nhật bảng TRÚNG TUYỂN
+                    let htmlPassed = '';
+                    if (data.passed.length === 0) {
+                        htmlPassed = '<tr><td colspan="6" class="text-center text-muted">Không có dữ liệu.</td></tr>';
+                    } else {
+                        data.passed.forEach(hs => {
+                            // Bảng này luôn là màu xanh (success)
+                            htmlPassed += renderRow(hs, 'success', false);
+                        });
+                    }
+                    passedBody.innerHTML = htmlPassed;
+                });
+        }
+    });
+});
+
+// Hàm tạo dòng table (giữ nguyên logic icon xem chi tiết)
+function renderRow(hs, color, isPendingTab) {
+    const mutedClass = hs.IsMuted ? 'table-light text-muted' : '';
+    const dateToday = new Date().toLocaleDateString('vi-VN'); // Ngày duyệt cho bảng trúng tuyển
+    
+    return `
+        <tr class="${mutedClass}">
+            <td>${hs.MaHSO}</td>
+            <td>${hs.HoTen}</td>
+            <td>${isPendingTab ? hs.MaNganh : '<span class="fw-bold">' + hs.MaNganh + '</span>'}</td>
+            <td class="fw-bold text-primary">${hs.Diem}</td>
+            <td>
+                ${!isPendingTab ? dateToday : `
+                <span class="badge rounded-pill bg-${color} ${color === 'warning' ? 'text-dark' : ''}">
+                    ${hs.TrangThai}
+                </span>`}
+            </td>
+            <td class="text-center">
+                <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#detailModal${hs.MaPTXT}">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>
+        </tr>`;
+}
+
+</script>
+<style>
+    .nav-pills .nav-link.active { background-color: #198754; }
+    .table-hover tbody tr:hover { background-color: #f8f9fa; }
+    .modal-header { border-bottom: 0; }
+    .modal-footer { border-top: 0; }
+    .form-select-lg { font-size: 0.95rem; }
+</style>
+
 {% endblock %}

@@ -1,5 +1,8 @@
+import os
+
 from flask import *
 from flask_login import *
+from models import LoaiPhuongThuc
 from sqlalchemy import exists
 from extensions import db
 from models import *
@@ -116,82 +119,203 @@ def delete_nganh(ma_nganh):
         db.session.rollback()
         flash('Không thể xóa vì ngành này đang có lớp trực thuộc!', 'danger')
     return redirect(url_for('admin.manage_nganh'))
-
-@admin_bp.route('/review_applications')
+# Quản lý tổ hợp 
+@admin_bp.route('to_hop_mon', methods=['GET', 'POST'])
 @login_required
-def view_all_applications():
-    # 1. Lấy tham số lọc từ URL (Request Args)
-    filter_status = request.args.get('status')
-    ma_nganh_filter = request.args.get('ma_nganh')
-    min_diem_filter = request.args.get('min_diem', type=float)
-    pt_filter = request.args.get('phuong_thuc')
+def quanlytohop():
+    if request.method == 'POST':
+        ten_th = request.form.get('ten_to_hop').upper()
+        cac_mon = ",".join([m.strip() for m in request.form.get('cac_mon').split(',') if m.strip()])
+        moi = ToHopMon(TenToHop=ten_th,
+                    CacMon = cac_mon)
+        db.session.add(moi)
+        db.session.commit()
+        flash('Thêm tổ hợp thành công!')
+        return redirect(url_for('admin.quanlytohop'))
+    ds_tohop = ToHopMon.query.all()
+    return render_template('admin/quan_ly_to_hop.html', ds_tohop=ds_tohop)
+@admin_bp.route('/to_hop_mon/sua/<int:id>', methods=['POST'])
+@login_required
+def sua_to_hop(id):
+    th = ToHopMon.query.get(id)
+    th.TenToHop = request.form.get('ten_to_hop')
+    cac_mon_raw = request.form.get('cac_mon')
+    th.CacMon = ",".join([m.strip() for m in cac_mon_raw.split(',') if m.strip()])
+    db.session.commit()
+    flash("Cập nhật thành công", "success")
+    return redirect(url_for('admin.quanlytohop'))
+@admin_bp.route('/to_hop_mon/xoa/<int:id>')
+@login_required
+def xoa_to_hop(id):
+    th = ToHopMon.query.get_or_404(id)
+    try:
+        db.session.delete(th)
+        db.session.commit()
+    except:
+        db.session.rollback()
+        flash("Không thể xóa vì tổ hợp này đang được sử dụng trong hồ sơ khác!", "danger")
+    return redirect(url_for('admin.quanlytohop'))
+@admin_bp.route('/gan-to-hop', methods=['GET', 'POST'])
+@login_required
+def gan_to_hop():
+    if request.method == 'POST':
+        ma_nganh = request.form.get('ma_nganh')
+        cac_ma_to_hop = request.form.getlist('to_hop_ids') 
+        nganh = Nganh.query.get(ma_nganh)
+        nganh.ds_to_hop = [] 
+        for th_id in cac_ma_to_hop:
+            to_hop = ToHopMon.query.get(int(th_id))
+            nganh.ds_to_hop.append(to_hop)
+            
+        db.session.commit()
+        return redirect(url_for('admin.gan_to_hop'))
 
-    # 2. Xây dựng Query cơ bản với JOIN
-    # Chúng ta lấy: Đối tượng PT_XetTuyen, Tên thí sinh, Tên ngành
-    query = db.session.query(
-        PT_XetTuyen, 
-        HSO_XETTUYEN.HoTen, 
-        Nganh.TenNganh
-    ).join(HSO_XETTUYEN, PT_XetTuyen.MaHSO == HSO_XETTUYEN.MaHSO)\
-     .join(Nganh, PT_XetTuyen.MaNganh == Nganh.MaNganh)
+    ds_nganh = Nganh.query.all()
+    ds_to_hop = ToHopMon.query.all()
+    return render_template('admin/gan_to_hop.html', ds_nganh=ds_nganh, ds_to_hop=ds_to_hop)
 
-    # 3. Áp dụng các bộ lọc nếu người dùng có chọn
-    if filter_status:
-        # So sánh với giá trị String của Enum (ví dụ: 'Chờ duyệt')
-        query = query.filter(PT_XetTuyen.TrangThai == filter_status)
-        
-    if ma_nganh_filter:
-        query = query.filter(PT_XetTuyen.MaNganh == ma_nganh_filter)
-        
-    if min_diem_filter is not None:
-        query = query.filter(PT_XetTuyen.Diem >= min_diem_filter)
-        
-    if pt_filter and pt_filter != "":
-        try:
-            # Chuyển string 'DGNL' thành LoaiPhuongThuc.DGNL
-            enum_pt = LoaiPhuongThuc[pt_filter] 
-            query = query.filter(PT_XetTuyen.LoaiPT == enum_pt)
-        except KeyError:
-            # Nếu string gửi lên không khớp với Enum thì bỏ qua lọc
-            pass
 
-    # 4. Sắp xếp theo điểm giảm dần và thực thi truy vấn
-    applications = query.order_by(PT_XetTuyen.Diem.desc()).all()
+@admin_bp.route('/api/get_to_hop/<ma_nganh>')
+def get_to_hop_api(ma_nganh):
+    nganh = Nganh.query.get(ma_nganh)
+    if not nganh:
+        return jsonify([])
+    return jsonify([{
+        'id': th.MaToHop,
+        'ten': th.TenToHop,
+        'cac_mon': th.CacMon
+    } for th in nganh.ds_to_hop])
 
-    # 5. Lấy dữ liệu bổ trợ cho các ô Select trên giao diện
-    nganhs = Nganh.query.all()
-    # Lấy danh sách các phương thức từ Enum đã định nghĩa
-    methods = [m.name for m in LoaiPhuongThuc] 
+@admin_bp.route('/admin/duyet_thi_sinh', methods=['GET', 'POST'])
+def duyet_thi_sinh():
+    ds_nganh = Nganh.query.all()
+
+    if request.method == 'POST':
+
+        ma_nganh = request.form.get('ma_nganh')
+        chi_tieu = int(request.form.get('chi_tieu'))
+        loai_pt_raw = request.form.get('loai_pt').strip()
+        print(loai_pt_raw)
+        loai_pt = None
+        for member in LoaiPhuongThuc: 
+            if member.value == loai_pt_raw:
+                loai_pt = member
+                break
+        if loai_pt is None:
+            print(f"DEBUG: Khong tim thay {loai_pt_raw} trong Enum!")
+            flash(f"Loại phương thức '{loai_pt_raw}' không hợp lệ!", "danger")
+            return redirect(url_for('admin.duyet_thi_sinh'))
+
+        # Lấy danh sách chờ duyệt theo ngành + phương thức
+        danh_sach = PT_XetTuyen.query.filter_by(
+            MaNganh=ma_nganh,
+            LoaiPT=loai_pt,
+            TrangThai=TrangThaiXT.CHO_DUYET
+        ).order_by(PT_XetTuyen.Diem.desc()).all()
+
+        count = 0
+
+        for hs in danh_sach:
+            if count >= chi_tieu:
+                break
+            da_trung_tuyen = PT_XetTuyen.query.filter(
+                PT_XetTuyen.MaHSO == hs.MaHSO,
+                PT_XetTuyen.TrangThai == TrangThaiXT.TRUNG_TUYEN
+            ).first()
+
+            if da_trung_tuyen:
+                continue
+            hs.TrangThai = TrangThaiXT.TRUNG_TUYEN
+            ma_khoa = hs.nganh.MaKhoa if hs.nganh else "XX"
+            stt = str(hs.MaHSO).zfill(3)
+            ma_sv = f"D23DC{ma_khoa}{stt}"
+            if not SinhVien.query.filter_by(MaHSO=hs.MaHSO).first():
+
+                new_sv = SinhVien(
+                    MaSV=ma_sv,
+                    HoTen=hs.ho_so.HoTen,
+                    NgaySinh=hs.ho_so.NgaySinh,
+                    Email=hs.ho_so.Email,
+                    ID_TaiKhoan=hs.ho_so.ID_TaiKhoan,
+                    MaHSO=hs.MaHSO,
+                    MaLop=None
+                )
+                db.session.add(new_sv)
+            if hs.ho_so and hs.ho_so.tai_khoan:
+                hs.ho_so.tai_khoan.vai_tro = VaiTro.SINHVIEN
+
+            db.session.add(hs)
+            count += 1
+        db.session.commit()
+        flash(f"Đã duyệt thành công {count} thí sinh!", "success")
+        return redirect(url_for('admin.duyet_thi_sinh'))
+    ds_tong_quat = PT_XetTuyen.query.all()
 
     return render_template(
         'admin/view_applications.html',
-        applications=applications,
-        nganhs=nganhs,
-        methods=methods
+        ds_nganh=ds_nganh,
+        ds_tong_quat=ds_tong_quat,
+        datetime=datetime
     )
 
-
-@admin_bp.route('/approve/<string:ma_ptxt>/<string:action>')
-@login_required
-def approve_admission(ma_ptxt, action):
-    # Lấy bản ghi xét tuyển theo ID (MaPTXT)
-    pt = PT_XetTuyen.query.get_or_404(ma_ptxt)
-
-    if action == 'accept':
-        pt.TrangThai = TrangThaiXT.TRUNG_TUYEN
-        flash(f"Đã duyệt trúng tuyển cho hồ sơ mã {ma_ptxt}", "success")
-    elif action == 'reject':
-        pt.TrangThai = TrangThaiXT.TU_CHOI
-        flash(f"Đã từ chối hồ sơ mã {ma_ptxt}", "info")
-
+@admin_bp.route('/api/get_candidates')
+def get_candidates():
     try:
-        db.session.commit()
+        ma_nganh = request.args.get('ma_nganh')
+        loai_pt_raw = request.args.get('loai_pt')
+        loai_pt = next((m for m in LoaiPhuongThuc if m.value == loai_pt_raw), None)
+        if not loai_pt:
+            return jsonify({"pending": [], "passed": []})
+        ds_pending = PT_XetTuyen.query.filter_by(
+            MaNganh=ma_nganh, LoaiPT=loai_pt, TrangThai=TrangThaiXT.CHO_DUYET
+        ).order_by(PT_XetTuyen.Diem.desc()).all()
+        ds_passed = PT_XetTuyen.query.filter_by(
+            MaNganh=ma_nganh, LoaiPT=loai_pt, TrangThai=TrangThaiXT.TRUNG_TUYEN
+        ).order_by(PT_XetTuyen.Diem.desc()).all()
+        def format_data(danh_sach, is_pending=True):
+            res = []
+            for hs in danh_sach:
+                is_muted = False
+                trang_thai_text = hs.TrangThai.value            
+                if is_pending:
+                    da_trung_tuyen_khac = PT_XetTuyen.query.filter(
+                        PT_XetTuyen.MaHSO == hs.MaHSO,
+                        PT_XetTuyen.TrangThai == TrangThaiXT.TRUNG_TUYEN
+                    ).first()
+                    if da_trung_tuyen_khac:
+                        trang_thai_text = "Đã trúng tuyển ngành khác"
+                        is_muted = True
+                res.append({
+                    "MaHSO": hs.MaHSO,
+                    "HoTen": hs.ho_so.HoTen if hs.ho_so else "N/A",
+                    "MaNganh": hs.MaNganh,
+                    "Diem": float(hs.Diem),
+                    "TrangThai": trang_thai_text,
+                    "IsMuted": is_muted,
+                    "MaPTXT": hs.MaPTXT
+                })
+            return res
+        return jsonify({
+            "pending": format_data(ds_pending, is_pending=True),
+            "passed": format_data(ds_passed, is_pending=False)
+        })
     except Exception as e:
-        db.session.rollback()
-        flash(f"Lỗi hệ thống: {str(e)}", "danger")
+        return jsonify({"error": str(e)}), 500
+import os
+from flask import send_from_directory, current_app
+from urllib.parse import unquote # Thêm dòng này
 
-    # Quay lại trang danh sách kèm theo các tham số lọc hiện tại (nếu có)
-    return redirect(request.referrer or url_for('admin.view_all_applications'))
+@admin_bp.route('/admin/view-file/<path:filename>')
+def view_file(filename):
+    filename = unquote(filename)
+    actual_filename = os.path.basename(filename)
+    project_dir = os.path.dirname(current_app.root_path) 
+    upload_path = os.path.join(project_dir, 'uploads')
+    full_path = os.path.join(upload_path, actual_filename)
+    if not os.path.exists(full_path):
+        upload_path = os.path.join(current_app.root_path, 'uploads')
+        full_path = os.path.join(upload_path, actual_filename)
+    return send_from_directory(upload_path, actual_filename, as_attachment=False)
 
 @admin_bp.route('/input_grade', methods=['GET', 'POST'])
 @login_required

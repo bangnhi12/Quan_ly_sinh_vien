@@ -1,108 +1,170 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-9 col-lg-8">
-        <div class="card shadow border-0 rounded-4">
-            <div class="card-header bg-white border-0 pt-4 text-center">
-                <i class="bi bi-journal-check text-primary" style="font-size: 3rem;"></i>
-                <h4 class="fw-bold mt-2">ĐĂNG KÝ XÉT TUYỂN</h4>
-                <p class="text-muted small">Vui lòng chọn ngành và phương thức xét tuyển phù hợp.</p>
-            </div>
-            
-            <div class="card-body p-4 p-sm-5">
-                <form action="{{ url_for('candidate.register_admission') }}" method="POST" enctype="multipart/form-data">
-                    
-                    <div class="mb-4">
-                        <label class="form-label fw-bold small">Ngành đăng ký</label>
-                        <select name="ma_nganh" class="form-select form-select-lg bg-light border-0 shadow-none" required>
-                            <option value="" selected disabled>-- Chọn ngành học --</option>
-                            {% for n in ds_nganh %}
-                            <option value="{{ n.MaNganh }}">{{ n.TenNganh }} ({{ n.MaNganh }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Đăng ký xét tuyển</h4>
+                </div>
 
-                    <div class="mb-4">
-                        <label class="form-label fw-bold small">Phương thức xét tuyển</label>
-                        <select name="loai_pt" id="loai_pt" class="form-select form-select-lg bg-light border-0 shadow-none" onchange="toggleAdmissionFields()" required>
-                            <option value="" selected disabled>-- Chọn phương thức --</option>
-                            <option value="DGNL">Đánh giá năng lực</option>
-                            <option value="HOCBA_IELTS">Học bạ kết hợp IELTS</option>
-                            <option value="THPT">Điểm thi THPT (Tốt nghiệp)</option>
-                        </select>
-                    </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
 
-                    <hr class="my-4 opacity-25">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ngành xét tuyển</label>
+                            <select name="ma_nganh" class="form-select">
+                                {% for n in ds_nganh %}
+                                <option value="{{ n.MaNganh }}">{{ n.TenNganh }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-                    <div id="common_score" class="mb-4" style="display:none;">
-                        <label id="label_diem_tong" class="form-label fw-bold small">Điểm xét tuyển</label>
-                        <input type="number" step="0.01" name="diem" class="form-control form-control-lg bg-light border-0" placeholder="0.00">
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Phương thức xét tuyển</label>
+                            <select name="loai_pt" id="loai_pt" class="form-select">
+                                <option value="THPT">Điểm thi THPT</option>
+                                <option value="HOCBA_IELTS">Học bạ kết hợp IELTS</option>
+                                <option value="DGNL">Đánh giá năng lực</option>
+                            </select>
+                        </div>
 
-                    <div id="group_dgnl" class="mb-4" style="display:none;">
-                        <label class="form-label fw-bold small">Minh chứng kết quả DGNL (File PDF/Ảnh)</label>
-                        <input type="file" name="file_dgnl" class="form-control bg-light border-0">
-                    </div>
+                        <div class="mb-3" id="block_tohop">
+                            <label class="form-label fw-bold">Tổ hợp môn</label>
+                            <select name="ma_to_hop" id="tohop" class="form-select">
+                                <option value="">-- Chọn tổ hợp môn --</option>
+                                {% for th in ds_tohop %}
+                                    <option value="{{ th.MaToHop }}">{{ th.TenToHop }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-                    <div id="group_hocba_ielts" style="display:none;">
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small">Điểm IELTS</label>
-                                <input type="number" step="0.1" name="diem_ielts" class="form-control form-control-lg bg-light border-0" placeholder="Ví dụ: 6.5">
+                        <hr>
+
+                        <div id="block_diem_mon" style="display:none;">
+                            <h6 class="text-primary mb-3">Nhập điểm theo môn của tổ hợp</h6>
+                            <div id="mon_container" class="p-3 border rounded bg-light">
+                                </div>
+                        </div>
+
+                        <div id="block_ielts" class="mt-3" style="display:none;">
+                            <h6 class="text-success mb-3">Minh chứng Học bạ & IELTS</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Điểm IELTS</label>
+                                    <input name="ielts" type="number" step="0.1" min="5.5" max="9" class="form-control" placeholder="VD: 6.5">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">File IELTS (scan)</label>
+                                    <input type="file" name="file_ielts" class="form-control">
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small">File chứng chỉ IELTS</label>
-                                <input type="file" name="file_ielts" class="form-control bg-light border-0">
+                            <div class="mb-3">
+                                <label class="form-label">File Học bạ (scan)</label>
+                                <input type="file" name="file_hocba" class="form-control">
                             </div>
                         </div>
-                        <div class="mb-4">
-                            <label class="form-label fw-bold small">File học bạ (Bản scan PDF)</label>
-                            <input type="file" name="file_hocba" class="form-control bg-light border-0">
+
+                        <div id="block_dgnl" class="mt-3" style="display:none;">
+                            <h6 class="text-warning mb-3">Thông tin ĐGNL</h6>
+                            <input name="dgnl" type="number" step="0.01" class="form-control mb-2" placeholder="Tổng điểm DGNL">
+                            <label class="form-label">File minh chứng DGNL</label>
+                            <input type="file" name="file_dgnl" class="form-control">
                         </div>
-                    </div>
 
-                    <div class="alert alert-warning py-2 small border-0 shadow-sm mb-4">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i> 
-                        Lưu ý: File minh chứng phải rõ nét, định dạng PDF hoặc hình ảnh (JPG, PNG).
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-danger btn-lg fw-bold shadow-sm rounded-3">
-                            GỬI HỒ SƠ ĐĂNG KÝ
-                        </button>
-                    </div>
-                </form>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Gửi hồ sơ</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
-<div class="mt-4">
-        <a href="{{ url_for('candidate.dashboard') }}" class="btn btn-link text-decoration-none text-muted">
-            <i class="bi bi-arrow-left me-1"></i> Quay lại Dashboard
-        </a>
-    </div>
-<script>
-function toggleAdmissionFields() {
-    const pt = document.getElementById('loai_pt').value;
-    const labelDiem = document.getElementById('label_diem_tong');
-    
-    // Hiển thị khung nhập điểm chung
-    document.getElementById('common_score').style.display = pt ? 'block' : 'none';
-    
-    // Reset hiển thị các nhóm
-    document.getElementById('group_dgnl').style.display = 'none';
-    document.getElementById('group_hocba_ielts').style.display = 'none';
 
-    if (pt === 'DGNL') {
-        labelDiem.innerText = "Điểm bài thi Đánh giá năng lực:";
-        document.getElementById('group_dgnl').style.display = 'block';
-    } else if (pt === 'HOCBA_IELTS') {
-        labelDiem.innerText = "Điểm trung bình Học bạ:";
-        document.getElementById('group_hocba_ielts').style.display = 'block';
-    } else if (pt === 'THPT') {
-        labelDiem.innerText = "Tổng điểm 3 môn xét tuyển (THPT):";
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const loaiPt = document.getElementById("loai_pt");
+    const tohopSelect = document.getElementById("tohop");
+    const monContainer = document.getElementById("mon_container");
+    const blockDiemMon = document.getElementById("block_diem_mon");
+
+    function loadMon(id) {
+        // Kiểm tra xem ID có tồn tại không
+        if (!id || id === "" || id === "None") {
+            console.log("ID trống, không tải môn.");
+            monContainer.innerHTML = "<p class='text-muted'>Vui lòng chọn một tổ hợp môn.</p>";
+            return;
+        }
+
+        console.log("Đang gọi API cho ID tổ hợp:", id);
+
+        fetch(`/candidate/get_mon_tohop/${id}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Mã lỗi: " + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Dữ liệu nhận về từ Server:", data);
+                monContainer.innerHTML = "";
+
+                if (data.mon && data.mon.length > 0) {
+                    data.mon.forEach((tenMon, i) => {
+                        monContainer.innerHTML += `
+                            <div class="mb-3 p-2 border-bottom">
+                                <label class="form-label fw-bold text-dark">${tenMon}</label>
+                                <input type="hidden" name="ten_mon_${i}" value="${tenMon}">
+                                <input type="number" step="0.01" min="0" max="10" 
+                                       name="diem_mon_${i}" 
+                                       class="form-control" 
+                                       placeholder="Nhập điểm ${tenMon}" required>
+                            </div>
+                        `;
+                    });
+                    // Thêm input ẩn để backend biết số lượng môn
+                    const inputCount = document.createElement("input");
+                    inputCount.type = "hidden";
+                    inputCount.name = "so_luong_mon";
+                    inputCount.value = data.mon.length;
+                    monContainer.appendChild(inputCount);
+                } else {
+                    monContainer.innerHTML = "<p class='text-warning'>Tổ hợp này chưa được cấu hình môn học.</p>";
+                }
+            })
+            .catch(error => {
+                console.error("Lỗi Fetch chi tiết:", error);
+                monContainer.innerHTML = `<p class='text-danger'>Lỗi: ${error.message}. Hãy kiểm tra F12 Console.</p>`;
+            });
     }
-}
+
+    function updateUI() {
+        const val = loaiPt.value;
+        console.log("Phương thức đã chọn:", val);
+
+        // Hiển thị các khối dựa trên phương thức
+        const isDgnl = (val === "DGNL");
+        document.getElementById("block_tohop").style.display = isDgnl ? "none" : "block";
+        blockDiemMon.style.display = isDgnl ? "none" : "block";
+        document.getElementById("block_ielts").style.display = (val === "HOCBA_IELTS") ? "block" : "none";
+        document.getElementById("block_dgnl").style.display = isDgnl ? "block" : "none";
+
+        // Tự động load môn nếu đã có ID tổ hợp sẵn
+        if (!isDgnl) {
+            loadMon(tohopSelect.value);
+        }
+    }
+
+    // Sự kiện thay đổi
+    loaiPt.addEventListener("change", updateUI);
+    tohopSelect.addEventListener("change", function() {
+        loadMon(this.value);
+    });
+
+    // Khởi tạo lần đầu
+    updateUI();
+});
 </script>
 {% endblock %}

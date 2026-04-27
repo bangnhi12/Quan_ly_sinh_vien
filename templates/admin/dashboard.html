@@ -61,7 +61,13 @@
                         <a href="{{ url_for('admin.manage_lops') }}" class="list-group-item list-group-item-action border-0 py-3">
                             <i class="bi bi-diagram-3 me-2"></i> Quản lý Lớp
                         </a>
-                        <a href="{{url_for('admin.view_all_applications')}}" class="list-group-item list-group-item-action border-0 py-3 text-dark">
+                        <a href="{{ url_for('admin.quanlytohop') }}" class="list-group-item list-group-item-action border-0 py-3">
+                            <i class="bi bi-diagram-3 me-2"></i> Quản lý Tổ Hợp
+                        </a>
+                        <a href="{{ url_for('admin.gan_to_hop') }}" class="list-group-item list-group-item-action border-0 py-3">
+                            <i class="bi bi-diagram-3 me-2"></i> Gán tổ hợp
+                        </a>
+                        <a href="{{url_for('admin.duyet_thi_sinh')}}" class="list-group-item list-group-item-action border-0 py-3 text-dark">
                             <i class="bi bi-check2-square me-2"></i> Duyệt Hồ Sơ
                         </a>
                         <a href="{{url_for('admin.create_student')}}" class="list-group-item list-group-item-action border-0 py-3">
@@ -89,7 +95,7 @@
                 </div>
             </div>
         </div>
-
+<!-- 
         <div class="col-md-8">
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header bg-white fw-bold border-0 pt-3 text-uppercase">Hồ sơ chờ duyệt mới nhất</div>
@@ -124,10 +130,10 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group shadow-sm">
-                                            <a href="{{ url_for('admin.approve_admission', ma_ptxt=pt.MaPTXT, action='accept') }}" class="btn btn-sm btn-success" title="Chấp nhận">
+                                            <a href="{{ url_for('admin.duyet_thi_sinh') }}" class="btn btn-sm btn-success" title="Chấp nhận">
                                                 <i class="bi bi-check-lg"></i>
                                             </a>
-                                            <a href="{{ url_for('admin.approve_admission', ma_ptxt=pt.MaPTXT, action='reject') }}" class="btn btn-sm btn-danger" title="Từ chối">
+                                            <a href="{{ url_for('admin.duyet_thi_sinh') }}" class="btn btn-sm btn-danger" title="Từ chối">
                                                 <i class="bi bi-x-lg"></i>
                                             </a>
                                         </div>
@@ -144,7 +150,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> -->
 
 <div class="modal fade" id="modalNotify" tabindex="-1">
     <div class="modal-dialog">

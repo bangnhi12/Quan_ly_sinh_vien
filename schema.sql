@@ -169,3 +169,42 @@ CREATE TABLE ReviewNganh (
     FOREIGN KEY (MaNganh) REFERENCES Nganh(MaNganh),
     FOREIGN KEY (MaAdmin) REFERENCES QuanTri(MaAdmin)
 );
+--17. Tổ hợp môn
+CREATE TABLE ToHopMon (
+    MaToHop INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, 
+    TenToHop VARCHAR(100) NOT NULL, 
+    CacMon VARCHAR(255) DEFAULT NULL        
+);
+
+-- 1. Thêm cột MaToHop vào bảng PT_XetTuyen
+ALTER TABLE PT_XetTuyen 
+ADD COLUMN MaToHop INT DEFAULT NULL;
+
+-- 2. Thiết lập ràng buộc khóa ngoại
+ALTER TABLE PT_XetTuyen
+ADD CONSTRAINT FK_PTXT_ToHop 
+FOREIGN KEY (MaToHop) REFERENCES ToHopMon(MaToHop) 
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+CREATE TABLE ChiTietDiemHocBa (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    MaPTXT INT NOT NULL,
+    TenMon VARCHAR(50) NOT NULL,
+    DiemMon DECIMAL(4, 2) NOT NULL,
+    CONSTRAINT fk_chi_tiet_ptxt FOREIGN KEY (MaPTXT) 
+        REFERENCES PT_XetTuyen(MaPTXT) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Đảm bảo cột Diem có thể nhận giá trị mặc định là 0 trước khi tính toán
+ALTER TABLE PT_XetTuyen 
+MODIFY COLUMN Diem DECIMAL(4, 2) DEFAULT 0.00;
+
+CREATE TABLE Nganh_ToHop (
+    MaNganh VARCHAR(4) NOT NULL,
+    MaToHop INT NOT NULL,
+    PRIMARY KEY (MaNganh, MaToHop),
+    CONSTRAINT FK_Nganh_ToHop_Nganh FOREIGN KEY (MaNganh) 
+        REFERENCES Nganh(MaNganh) ON DELETE CASCADE,
+    CONSTRAINT FK_Nganh_ToHop_ToHop FOREIGN KEY (MaToHop) 
+        REFERENCES ToHopMon(MaToHop) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
