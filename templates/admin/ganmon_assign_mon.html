@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="mb-4">
+        <a href="{{ url_for('admin_gan_mon.list_nganh') }}" class="btn btn-secondary"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-primary text-white fw-bold py-3">
+                    <i class="bi bi-info-circle me-2"></i>Thông Tin Ngành
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Mã Ngành</label>
+                        <div class="h5 fw-bold">{{ nganh.MaNganh }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Tên Ngành</label>
+                        <div class="h5 fw-bold">{{ nganh.TenNganh }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Khoa</label>
+                        <div class="fw-bold">{{ nganh.khoa.TenKhoa }}</div>
+                    </div>
+                    <hr>
+                    <div>
+                        <label class="form-label text-muted small">Tổng Số Môn Được Gán</label>
+                        <div class="h4 text-success fw-bold">{{ assigned_mon_ids|length }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-success text-white fw-bold py-3">
+                    <i class="bi bi-check2-all me-2"></i>Chọn Các Môn Học
+                </div>
+                <form method="post" class="card-body p-4">
+                    <div class="mb-4">
+                        <input type="text" id="search-mons" class="form-control form-control-lg" placeholder="Tìm kiếm môn học...">
+                    </div>
+
+                    <!-- Nhóm môn theo học kỳ -->
+                    {% for hoc_ky, mons in mons_by_ky.items() %}
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-primary mb-3">{{ hoc_ky }}</h6>
+                        <div class="row g-2">
+                            {% for mon in mons %}
+                            <div class="col-md-6 mon-item" data-search="{{ mon.MaMon }} {{ mon.TenMon }}">
+                                <div class="form-check p-3 border rounded-3" style="background: #f8f9fa;">
+                                    <input class="form-check-input" type="checkbox" name="selected_mons" value="{{ mon.MaMon }}" id="mon_{{ mon.MaMon }}" {% if mon.MaMon in assigned_mon_ids %}checked{% endif %}>
+                                    <label class="form-check-label w-100" for="mon_{{ mon.MaMon }}">
+                                        <div class="fw-bold">{{ mon.MaMon }}: {{ mon.TenMon }}</div>
+                                        <small class="text-muted">{{ mon.SoTinChi }} tín chỉ</small>
+                                        {% if mon.MoTa %}<br><small class="text-muted">{{ mon.MoTa[:60] }}</small>{% endif %}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex gap-2 justify-content-center mt-5 pt-3 border-top">
+                        <a href="{{ url_for('admin_gan_mon.list_nganh') }}" class="btn btn-secondary btn-lg px-5">Hủy</a>
+                        <button type="submit" class="btn btn-success btn-lg px-5"><i class="bi bi-check-lg me-1"></i>Cập Nhật Môn</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('search-mons').addEventListener('keyup', function(e) {
+    const searchText = e.target.value.toLowerCase();
+    document.querySelectorAll('.mon-item').forEach(item => {
+        const shouldShow = item.getAttribute('data-search').toLowerCase().includes(searchText);
+        item.style.display = shouldShow ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

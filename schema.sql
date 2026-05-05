@@ -1,42 +1,83 @@
-CREATE DATABASE quan_ly_sinh_vien;
-USE quan_ly_sinh_vien;
+-- ============================================================
+-- SCHEMA QUẢN LÝ SINH VIÊN - PRODUCTION (2026)
+-- Database: quan_ly_sinh_vien_1
+-- Engine: InnoDB
+-- Charset: utf8mb4
+-- 
+-- This schema is synchronized with Flask-SQLAlchemy models.py
+-- All tables, columns, and relationships match the ORM definitions
+-- ============================================================
 
--- 1. TaiKhoan
-CREATE TABLE TaiKhoan (
-    ID_TaiKhoan INT AUTO_INCREMENT PRIMARY KEY,
-    TenDangNhap VARCHAR(50) UNIQUE NOT NULL,
-    MatKhau VARCHAR(255) NOT NULL,
-    VaiTro ENUM('admin','sinhvien','thisinh') NOT NULL,
-    TrangThai BOOLEAN DEFAULT TRUE
-);
+CREATE DATABASE IF NOT EXISTS quan_ly_sinh_vien_1;
+USE quan_ly_sinh_vien_1;
 
--- 2. Khoa
-CREATE TABLE Khoa (
-    MaKhoa VARCHAR(2) PRIMARY KEY,
-    TenKhoa VARCHAR(100) UNIQUE NOT NULL
-);
+-- ============================================================
+-- 1. TaiKhoan - Central user account management
+-- ============================================================
+CREATE TABLE IF NOT EXISTS TaiKhoan (
+    ID_TaiKhoan INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Account ID',
+    TenDangNhap VARCHAR(50) UNIQUE NOT NULL COMMENT 'Username',
+    MatKhau VARCHAR(255) NOT NULL COMMENT 'Password (hashed)',
+    VaiTro ENUM('admin','sinhvien','thisinh') NOT NULL COMMENT 'Role: admin, student, or applicant',
+    TrangThai BOOLEAN DEFAULT TRUE COMMENT 'Account status (active/inactive)',
+    
+    INDEX idx_tendangnhap (TenDangNhap)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Central account table for login management';
 
--- 3. Nganh
-CREATE TABLE Nganh (
-    MaNganh VARCHAR(4) PRIMARY KEY,
-    TenNganh VARCHAR(100) NOT NULL,
-    MaKhoa VARCHAR(2),
-    FOREIGN KEY (MaKhoa) REFERENCES Khoa(MaKhoa)
-);
+-- ============================================================
+-- 2. Khoa - Faculty/Department
+-- ============================================================
+CREATE TABLE IF NOT EXISTS Khoa (
+    MaKhoa VARCHAR(2) PRIMARY KEY COMMENT 'Faculty code (e.g., CN, KT)',
+    TenKhoa VARCHAR(100) UNIQUE NOT NULL COMMENT 'Faculty name (e.g., Khoa Công nghệ thông tin)',
+    
+    INDEX idx_tenkhoa (TenKhoa)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Faculty/Department master data';
 
--- 4. Lop
-CREATE TABLE Lop (
-    MaLop VARCHAR(11) PRIMARY KEY,
-    TenLop VARCHAR(100) UNIQUE NOT NULL,
-    MaNganh VARCHAR(4),
-    FOREIGN KEY (MaNganh) REFERENCES Nganh(MaNganh)
-);
+-- ============================================================
+-- 3. Nganh - Major/Specialization
+-- ============================================================
+CREATE TABLE IF NOT EXISTS Nganh (
+    MaNganh VARCHAR(4) PRIMARY KEY COMMENT 'Major code (e.g., CNPM, HTTT)',
+    TenNganh VARCHAR(100) NOT NULL COMMENT 'Major name',
+    MaKhoa VARCHAR(2) NOT NULL COMMENT 'Faculty code (foreign key)',
+    
+    CONSTRAINT FK_Nganh_Khoa FOREIGN KEY (MaKhoa) 
+        REFERENCES Khoa(MaKhoa) ON DELETE RESTRICT ON UPDATE CASCADE,
+    
+    INDEX idx_tennganhh (TenNganh),
+    INDEX idx_makhoa (MaKhoa)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Major/Specialization under each faculty';
+
+-- ============================================================
+-- 4. Lop - Class/Group
+-- ============================================================
+CREATE TABLE IF NOT EXISTS Lop (
+    MaLop VARCHAR(11) PRIMARY KEY COMMENT 'Class code (e.g., CNPM19A1)',
+    TenLop VARCHAR(100) UNIQUE NOT NULL COMMENT 'Class name',
+    MaNganh VARCHAR(4) NOT NULL COMMENT 'Major code (foreign key)',
+    
+    CONSTRAINT FK_Lop_Nganh FOREIGN KEY (MaNganh) 
+        REFERENCES Nganh(MaNganh) ON DELETE RESTRICT ON UPDATE CASCADE,
+    
+    INDEX idx_tenlow (TenLop),
+    INDEX idx_manganh (MaNganh)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Classes/Groups belonging to majors';
 
 -- 5. MonHoc
 CREATE TABLE MonHoc (
-    MaMH VARCHAR(7) PRIMARY KEY,
-    TenMH VARCHAR(100) NOT NULL,
+    MaMon VARCHAR(7) PRIMARY KEY,
+    TenMon VARCHAR(100) NOT NULL,
     SoTinChi INT NOT NULL,
+    HocKy INT COMMENT 'Học kỳ (1-8)',
+    MoTa VARCHAR(500) COMMENT 'Mô tả chi tiết',
+    TrangThai BOOLEAN DEFAULT TRUE COMMENT 'Hoạt động/Vô hiệu',
+    NgayTao DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT 'Ngày tạo',
+    NgayCapNhat DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Ngày cập nhật',
     CHECK (SoTinChi > 0)
 );
 
@@ -100,7 +141,7 @@ CREATE TABLE KQ_HocTap (
     Diem DECIMAL(4,2) NOT NULL,
     PRIMARY KEY (MaSV, MaMH),
     FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV),
-    FOREIGN KEY (MaMH) REFERENCES MonHoc(MaMH)
+    FOREIGN KEY (MaMH) REFERENCES MonHoc(MaMon)
 );
 
 -- 11. TotNghiep
@@ -208,3 +249,71 @@ CREATE TABLE Nganh_ToHop (
     CONSTRAINT FK_Nganh_ToHop_ToHop FOREIGN KEY (MaToHop) 
         REFERENCES ToHopMon(MaToHop) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ===== NÂNG CẤP BẢNG MonHoc (2026) =====
+-- Thêm các cột mới cho MonHoc
+ALTER TABLE MonHoc
+ADD COLUMN IF NOT EXISTS HocKy INT COMMENT 'Học kỳ (1-8)',
+ADD COLUMN IF NOT EXISTS MoTa VARCHAR(500) COMMENT 'Mô tả chi tiết',
+ADD COLUMN IF NOT EXISTS TrangThai BOOLEAN DEFAULT TRUE COMMENT 'Hoạt động/Vô hiệu',
+ADD COLUMN IF NOT EXISTS NgayTao DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT 'Ngày tạo',
+ADD COLUMN IF NOT EXISTS NgayCapNhat DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Ngày cập nhật';
+
+-- ===== BẢNG TRUNG GIAN: Nganh_MonHoc (Many-to-Many) =====
+CREATE TABLE IF NOT EXISTS Nganh_MonHoc (
+    MaNganh VARCHAR(4) NOT NULL COMMENT 'Mã ngành',
+    MaMon VARCHAR(7) NOT NULL COMMENT 'Mã môn',
+    NgayTao DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT 'Ngày gán',
+    
+    -- Composite Primary Key (MaNganh + MaMon)
+    PRIMARY KEY (MaNganh, MaMon),
+    
+    -- Foreign Keys
+    CONSTRAINT FK_NganhMonHoc_Nganh FOREIGN KEY (MaNganh) 
+        REFERENCES Nganh(MaNganh) ON DELETE CASCADE,
+    CONSTRAINT FK_NganhMonHoc_MonHoc FOREIGN KEY (MaMon) 
+        REFERENCES MonHoc(MaMon) ON DELETE CASCADE
+    
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
+  COMMENT='Bảng trung gian: Gán Môn Học cho Ngành (Many-to-Many với Composite PK)';
+
+-- ============================================================
+-- NÂNG CẤP 2026: BẢNG QUẢN LÝ ĐIỂM HỌC TẬP (DIEM)
+-- ============================================================
+-- Bảng này lưu trữ chi tiết điểm số của sinh viên cho mỗi môn học
+-- theo học kỳ và năm học cụ thể, hỗ trợ nhập/cập nhật qua Excel
+-- và truy vấn thống kê toàn diện.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS Diem (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+
+    MaSV VARCHAR(10) NOT NULL,
+    MaMon VARCHAR(7) NOT NULL,
+
+    DiemQT DECIMAL(4,2),
+    DiemThi DECIMAL(4,2),
+    DiemTK DECIMAL(4,2) NOT NULL,
+
+    HocKy INT,
+    NamHoc INT,
+
+    TrangThai BOOLEAN DEFAULT TRUE,
+    NgayCapNhat DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uk_diem_student_course (MaSV, MaMon, HocKy, NamHoc),
+
+    CONSTRAINT chk_diem_qt CHECK (DiemQT IS NULL OR (DiemQT >= 0 AND DiemQT <= 10)),
+    CONSTRAINT chk_diem_thi CHECK (DiemThi IS NULL OR (DiemThi >= 0 AND DiemThi <= 10)),
+    CONSTRAINT chk_diem_tk CHECK (DiemTK >= 0 AND DiemTK <= 10),
+    CONSTRAINT chk_hocky CHECK (HocKy IS NULL OR (HocKy >= 1 AND HocKy <= 8)),
+
+    CONSTRAINT FK_Diem_SinhVien FOREIGN KEY (MaSV)
+        REFERENCES SinhVien(MaSV)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT FK_Diem_MonHoc FOREIGN KEY (MaMon)
+        REFERENCES MonHoc(MaMon)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);

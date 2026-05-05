@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Kết Quả Nhập Điểm{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Kết Quả Nhập Điểm</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_diem.upload_page') }}">Nhập Điểm</a></li>
+                    <li class="breadcrumb-item active">Kết Quả</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        {% if result.failed_count == 0 and (result.success_count > 0 or result.update_count > 0) %}
+            <div class="alert alert-success alert-dismissible fade show">
+                <h4><i class="icon fas fa-check"></i> Thành Công!</h4>
+                Đã nhập thành công {{ result.success_count + result.update_count }}/{{ result.total_rows }} sinh viên.
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+        {% elif result.failed_count > 0 %}
+            <div class="alert alert-warning alert-dismissible fade show">
+                <h4><i class="icon fas fa-exclamation-triangle"></i> Có Lỗi!</h4>
+                Nhập thành công {{ result.success_count + result.update_count }}/{{ result.total_rows }} sinh viên.
+                Có {{ result.failed_count }} dòng bị lỗi.
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+        {% endif %}
+
+        <div class="row">
+            <div class="col-md-12">
+                <!-- Summary Card -->
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-bar"></i> Thống Kê Kết Quả
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-info"><i class="fas fa-file"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Tổng Dòng Dữ Liệu</span>
+                                        <span class="info-box-number">{{ result.total_rows }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-success"><i class="fas fa-plus"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Thêm Mới</span>
+                                        <span class="info-box-number">{{ result.success_count }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-warning"><i class="fas fa-edit"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Cập Nhật</span>
+                                        <span class="info-box-number">{{ result.update_count }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-danger"><i class="fas fa-times"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Lỗi</span>
+                                        <span class="info-box-number">{{ result.failed_count }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Details -->
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <table class="table table-bordered">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Môn Học:</strong></td>
+                                            <td>{{ result.ma_mon }} - {{ result.ten_mon }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Học Kỳ:</strong></td>
+                                            <td>{{ result.hoc_ky if result.hoc_ky else '(Không chỉ định)' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Năm Học:</strong></td>
+                                            <td>{{ result.nam_hoc if result.nam_hoc else '(Không chỉ định)' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Thời Gian Nhập:</strong></td>
+                                            <td>{{ now().strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Details (if any) -->
+                {% if result.failed_list %}
+                    <div class="card card-danger card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-exclamation-triangle"></i> Chi Tiết Lỗi ({{ result.failed_count }} dòng)
+                            </h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body" style="display: block;">
+                            <table class="table table-sm table-striped">
+                                <thead>
+                                    <tr>
+                                        <th width="10%">Dòng</th>
+                                        <th width="20%">MSSV</th>
+                                        <th width="70%">Lý Do Lỗi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for error in result.failed_list %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge badge-danger">{{ error.row }}</span>
+                                            </td>
+                                            <td>
+                                                <code>{{ error.mssv }}</code>
+                                            </td>
+                                            <td>
+                                                <span class="text-danger">{{ error.reason }}</span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% if result.failed_count > 50 %}
+                                <div class="alert alert-info mt-2">
+                                    Hiển thị 50 lỗi đầu tiên. Có tổng cộng {{ result.failed_count }} lỗi.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Action Buttons -->
+                <div class="card">
+                    <div class="card-footer">
+                        <a href="{{ url_for('admin_diem.upload_page') }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i> Nhập Thêm
+                        </a>
+                        <a href="{{ url_for('admin_diem.query_page') }}" class="btn btn-info">
+                            <i class="fas fa-search"></i> Tra Cứu Điểm
+                        </a>
+                        <a href="/admin" class="btn btn-secondary float-right">
+                            <i class="fas fa-home"></i> Quay Lại Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Bootstrap for collapsible cards
+$(document).ready(function() {
+    $('[data-card-widget="collapse"]').on('click', function() {
+        $(this).parents('.card').find('.card-body').slideToggle();
+    });
+});
+</script>
+{% endblock %}

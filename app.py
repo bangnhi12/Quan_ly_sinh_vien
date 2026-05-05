@@ -7,6 +7,9 @@ from routes.auth import auth_bp
 from routes.candidate import candidate_bp
 from routes.admin import admin_bp
 from routes.student import student_bp
+from routes.admin_mon import admin_mon_bp
+from routes.admin_gan_mon import admin_gan_mon_bp
+from routes.admin_diem import admin_diem_bp
 from models import VaiTro
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'quanlysinhvien'
@@ -25,6 +28,9 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(candidate_bp, url_prefix='/candidate')
 app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(student_bp, url_prefix='/student')
+app.register_blueprint(admin_mon_bp)
+app.register_blueprint(admin_gan_mon_bp)
+app.register_blueprint(admin_diem_bp)
 @app.route('/')
 def index():
     if current_user.is_authenticated:

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="mb-4">
+        <a href="{{ url_for('admin_mon.list_mon') }}" class="btn btn-secondary"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8" style="margin: 0 auto;">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-success text-white fw-bold py-3">
+                    <i class="bi bi-upload me-2"></i>Import Danh Sách Môn Học từ Excel
+                </div>
+                <form method="post" enctype="multipart/form-data" class="card-body p-5">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Chọn File Excel</label>
+                        <input type="file" name="file" class="form-control form-control-lg" accept=".xlsx,.xls,.csv" required>
+                        <small class="text-muted">Hỗ trợ: .xlsx, .xls, .csv</small>
+                    </div>
+
+                    <div class="mb-5 p-4 bg-light rounded-3">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Hướng dẫn định dạng file:</h6>
+                        <p class="mb-2"><strong>Cột bắt buộc:</strong></p>
+                        <ul class="mb-3">
+                            <li><code>MaMon</code> - Mã môn học (duy nhất, ví dụ: CS101)</li>
+                            <li><code>TenMon</code> - Tên môn học (ví dụ: Lập trình C++)</li>
+                            <li><code>SoTinChi</code> - Số tín chỉ (ví dụ: 3)</li>
+                        </ul>
+                        <p class="mb-2"><strong>Cột tùy chọn:</strong></p>
+                        <ul>
+                            <li><code>HocKy</code> - Học kỳ (1-8)</li>
+                            <li><code>MoTa</code> - Mô tả môn học</li>
+                        </ul>
+                        <p class="text-muted small">Ví dụ:</p>
+                        <table class="table table-sm table-bordered mt-2">
+                            <thead class="bg-secondary text-white">
+                                <tr>
+                                    <th>MaMon</th>
+                                    <th>TenMon</th>
+                                    <th>SoTinChi</th>
+                                    <th>HocKy</th>
+                                    <th>MoTa</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>CS101</td>
+                                    <td>Lập trình C++</td>
+                                    <td>3</td>
+                                    <td>1</td>
+                                    <td>Môn cơ bản về lập trình</td>
+                                </tr>
+                                <tr>
+                                    <td>CS201</td>
+                                    <td>Cơ sở dữ liệu</td>
+                                    <td>4</td>
+                                    <td>2</td>
+                                    <td>Thiết kế và quản lý CSDL</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-center mt-5">
+                        <a href="{{ url_for('admin_mon.list_mon') }}" class="btn btn-secondary btn-lg px-5">Hủy</a>
+                        <button type="submit" class="btn btn-success btn-lg px-5"><i class="bi bi-upload me-1"></i>Import Ngay</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

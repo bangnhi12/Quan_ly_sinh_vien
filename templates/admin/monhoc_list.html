@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="bi bi-book-fill me-2"></i>Quản lý Môn học</h2>
+            <p class="text-muted small mt-1">Danh sách các môn học trong hệ thống</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin_mon.add_mon') }}" class="btn btn-success">
+                <i class="bi bi-plus-lg me-1"></i>Thêm Môn Mới
+            </a>
+            <a href="{{ url_for('admin_mon.import_excel') }}" class="btn btn-info">
+                <i class="bi bi-upload me-1"></i>Import Excel
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4 rounded-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Tìm kiếm</label>
+                    <input type="text" name="search" class="form-control" placeholder="Mã hoặc tên môn..." value="{{ search }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Học Kỳ</label>
+                    <select name="hoc_ky" class="form-select">
+                        <option value="">Tất cả</option>
+                        {% for ky in hoc_kys %}
+                        <option value="{{ ky }}" {% if hoc_ky == ky|string %}selected{% endif %}>Kỳ {{ ky }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Trạng thái</label>
+                    <select name="trang_thai" class="form-select">
+                        <option value="">Tất cả</option>
+                        <option value="active" {% if trang_thai == 'active' %}selected{% endif %}>Hoạt động</option>
+                        <option value="inactive" {% if trang_thai == 'inactive' %}selected{% endif %}>Vô hiệu</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Tìm</button>
+                    <a href="{{ url_for('admin_mon.list_mon') }}" class="btn btn-secondary w-100"><i class="bi bi-arrow-clockwise"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if mon_hocs %}
+    <form method="post" action="{{ url_for('admin_mon.bulk_action') }}" class="mb-3">
+        <div class="alert alert-info d-flex align-items-center justify-content-between">
+            <span><i class="bi bi-info-circle me-2"></i><strong>Chọn:</strong> <span id="selected-count">0</span> môn</span>
+            <div class="d-flex gap-2">
+                <select name="action" class="form-select form-select-sm" style="max-width: 200px;">
+                    <option value="">-- Hành động --</option>
+                    <option value="delete">Vô hiệu hóa</option>
+                    <option value="restore">Kích hoạt</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-warning" id="bulk-btn" disabled>
+                    <i class="bi bi-lightning-fill me-1"></i>Thực hiện
+                </button>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th style="width: 30px;"><input type="checkbox" id="select-all" class="form-check-input"></th>
+                            <th>Mã Môn</th>
+                            <th>Tên Môn</th>
+                            <th>Tín Chỉ</th>
+                            <th>Học Kỳ</th>
+                            <th>Trạng thái</th>
+                            <th>Cập Nhật</th>
+                            <th class="text-center" style="width: 120px;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mon in mon_hocs %}
+                        <tr>
+                            <td><input type="checkbox" name="selected_ids" value="{{ mon.MaMon }}" class="form-check-input row-checkbox"></td>
+                            <td><span class="badge bg-primary">{{ mon.MaMon }}</span></td>
+                            <td><strong>{{ mon.TenMon }}</strong>{% if mon.MoTa %}<br><small class="text-muted">{{ mon.MoTa[:50] }}</small>{% endif %}</td>
+                            <td><span class="badge bg-light text-dark">{{ mon.SoTinChi }}</span></td>
+                            <td>{% if mon.HocKy %}<span class="badge bg-secondary">Kỳ {{ mon.HocKy }}</span>{% else %}<span class="text-muted">-</span>{% endif %}</td>
+                            <td>{% if mon.TrangThai %}<span class="badge bg-success">Hoạt động</span>{% else %}<span class="badge bg-secondary">Vô hiệu</span>{% endif %}</td>
+                            <td><small>{{ mon.NgayCapNhat.strftime('%d/%m/%Y') }}</small></td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('admin_mon.edit_mon', ma_mon=mon.MaMon) }}" class="btn btn-outline-primary" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                    <form action="{{ url_for('admin_mon.delete_mon', ma_mon=mon.MaMon) }}" method="post" style="display: inline;" onsubmit="return confirm('Xác nhận?')">
+                                        <button type="submit" class="btn btn-outline-danger" title="Xóa"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </form>
+
+    {% if pagination.pages > 1 %}
+    <nav class="mt-4"><ul class="pagination justify-content-center">
+        {% if pagination.has_prev %}<li class="page-item"><a class="page-link" href="{{ url_for('admin_mon.list_mon', page=pagination.prev_num, search=search, hoc_ky=hoc_ky, trang_thai=trang_thai) }}">Trước</a></li>{% endif %}
+        {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+                {% if page_num == pagination.page %}<li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                {% else %}<li class="page-item"><a class="page-link" href="{{ url_for('admin_mon.list_mon', page=page_num, search=search, hoc_ky=hoc_ky, trang_thai=trang_thai) }}">{{ page_num }}</a></li>{% endif %}
+            {% endif %}
+        {% endfor %}
+        {% if pagination.has_next %}<li class="page-item"><a class="page-link" href="{{ url_for('admin_mon.list_mon', page=pagination.next_num, search=search, hoc_ky=hoc_ky, trang_thai=trang_thai) }}">Sau</a></li>{% endif %}
+    </ul></nav>
+    {% endif %}
+    {% else %}
+    <div class="alert alert-info text-center py-5"><i class="bi bi-inbox fs-1 d-block mb-2"></i><strong>Không có môn học</strong></div>
+    {% endif %}
+</div>
+<script>
+document.getElementById('select-all').addEventListener('change', function() {
+    document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = this.checked);
+    updateSelectedCount();
+});
+document.querySelectorAll('.row-checkbox').forEach(cb => cb.addEventListener('change', updateSelectedCount));
+function updateSelectedCount() {
+    const count = document.querySelectorAll('.row-checkbox:checked').length;
+    document.getElementById('selected-count').textContent = count;
+    document.getElementById('bulk-btn').disabled = count === 0;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Tra Cứu Điểm{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Tra Cứu Điểm</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Tra Cứu Điểm</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- Query Mode Tabs -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">Chọn Cách Tra Cứu</h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="queryTabs">
+                            <li class="nav-item">
+                                <a class="nav-link {% if mode == 'student' %}active{% endif %}" 
+                                   href="?mode=student">
+                                    <i class="fas fa-user"></i> Theo Sinh Viên
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if mode == 'course' %}active{% endif %}" 
+                                   href="?mode=course">
+                                    <i class="fas fa-book"></i> Theo Môn Học
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if mode == 'class' %}active{% endif %}" 
+                                   href="?mode=class">
+                                    <i class="fas fa-users"></i> Theo Lớp + Môn
+                                </a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content mt-3">
+                            <!-- Mode 1: By Student -->
+                            <div class="tab-pane {% if mode == 'student' %}active{% endif %}" id="studentTab">
+                                <form method="POST" action="{{ url_for('admin_diem.query_page', mode='student') }}">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="ma_sv">Chọn Sinh Viên</label>
+                                                <select class="form-control select2" id="ma_sv" name="ma_sv" required>
+                                                    <option value="">-- Chọn sinh viên --</option>
+                                                    {% for sv in students %}
+                                                        <option value="{{ sv.MaSV }}" 
+                                                            {% if query_info.get('ma_sv') == sv.MaSV %}selected{% endif %}>
+                                                            {{ sv.MaSV }} - {{ sv.HoTen }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>&nbsp;</label>
+                                                <button type="submit" class="btn btn-primary btn-block">
+                                                    <i class="fas fa-search"></i> Tra Cứu
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Mode 2: By Course -->
+                            <div class="tab-pane {% if mode == 'course' %}active{% endif %}" id="courseTab">
+                                <form method="POST" action="{{ url_for('admin_diem.query_page', mode='course') }}">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="ma_mon">Chọn Môn Học</label>
+                                                <select class="form-control select2" id="ma_mon" name="ma_mon" required>
+                                                    <option value="">-- Chọn môn học --</option>
+                                                    {% for course in courses %}
+                                                        <option value="{{ course.MaMon }}" 
+                                                            {% if query_info.get('ma_mon') == course.MaMon %}selected{% endif %}>
+                                                            {{ course.MaMon }} - {{ course.TenMon }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>&nbsp;</label>
+                                                <button type="submit" class="btn btn-primary btn-block">
+                                                    <i class="fas fa-search"></i> Tra Cứu
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Mode 3: By Class + Course -->
+                            <div class="tab-pane {% if mode == 'class' %}active{% endif %}" id="classTab">
+                                <form method="POST" action="{{ url_for('admin_diem.query_page', mode='class') }}">
+                                    <div class="row">
+                                        <div class="col-md-5">
+                                            <div class="form-group">
+                                                <label for="ma_lop">Chọn Lớp</label>
+                                                <select class="form-control select2" id="ma_lop" name="ma_lop" required>
+                                                    <option value="">-- Chọn lớp --</option>
+                                                    {% for lop in classes %}
+                                                        <option value="{{ lop.MaLop }}" 
+                                                            {% if query_info.get('ma_lop') == lop.MaLop %}selected{% endif %}>
+                                                            {{ lop.MaLop }} - {{ lop.TenLop }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <div class="form-group">
+                                                <label for="ma_mon">Chọn Môn Học</label>
+                                                <select class="form-control select2" id="ma_mon" name="ma_mon" required>
+                                                    <option value="">-- Chọn môn học --</option>
+                                                    {% for course in courses %}
+                                                        <option value="{{ course.MaMon }}" 
+                                                            {% if query_info.get('ma_mon') == course.MaMon %}selected{% endif %}>
+                                                            {{ course.MaMon }} - {{ course.TenMon }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label>&nbsp;</label>
+                                                <button type="submit" class="btn btn-primary btn-block">
+                                                    <i class="fas fa-search"></i> Tra Cứu
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        {% if results %}
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-info card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                {% if mode == 'student' %}
+                                    <i class="fas fa-user"></i> Điểm của Sinh Viên
+                                {% elif mode == 'course' %}
+                                    <i class="fas fa-book"></i> Bảng Điểm Môn Học
+                                {% else %}
+                                    <i class="fas fa-users"></i> Bảng Điểm Lớp
+                                {% endif %}
+                            </h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-bordered table-hover datatable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>MSSV</th>
+                                        <th>Họ Tên</th>
+                                        <th>Lớp</th>
+                                        <th>Môn Học</th>
+                                        <th>Điểm QT</th>
+                                        <th>Điểm Thi</th>
+                                        <th>Điểm TK</th>
+                                        <th>Xếp Loại</th>
+                                        <th>Học Kỳ</th>
+                                        <th>Năm Học</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for grade in results %}
+                                        <tr>
+                                            <td><code>{{ grade.MaSV }}</code></td>
+                                            <td>{{ grade.sinh_vien.HoTen }}</td>
+                                            <td>{{ grade.sinh_vien.MaLop }}</td>
+                                            <td>
+                                                <strong>{{ grade.MaMon }}</strong><br/>
+                                                <small>{{ grade.mon_hoc.TenMon }}</small>
+                                            </td>
+                                            <td class="text-center">
+                                                {% if grade.DiemQT %}
+                                                    {{ "%.1f" | format(grade.DiemQT) }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if grade.DiemThi %}
+                                                    {{ "%.1f" | format(grade.DiemThi) }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center font-weight-bold">
+                                                <span class="badge {% if grade.DiemTK >= 8 %}badge-success{% elif grade.DiemTK >= 6 %}badge-info{% elif grade.DiemTK >= 4 %}badge-warning{% else %}badge-danger{% endif %}">
+                                                    {{ "%.1f" | format(grade.DiemTK) }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge {% if grade.is_passed() %}badge-success{% else %}badge-danger{% endif %}">
+                                                    {{ grade.get_xep_loai() }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                {% if grade.HocKy %}
+                                                    Kỳ {{ grade.HocKy }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if grade.NamHoc %}
+                                                    {{ grade.NamHoc }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% elif query_info %}
+            <div class="alert alert-warning">
+                <i class="fas fa-info-circle"></i> Không tìm thấy dữ liệu phù hợp.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('.datatable').DataTable({
+        "paging": true,
+        "lengthChange": true,
+        "searching": true,
+        "ordering": true,
+        "info": true,
+        "autoWidth": false,
+        "responsive": true,
+        "pageLength": 10,
+        "language": {
+            "lengthMenu": "Hiển thị _MENU_ dòng",
+            "zeroRecords": "Không tìm thấy dòng nào",
+            "info": "Hiển thị _START_ đến _END_ của _TOTAL_ dòng",
+            "infoEmpty": "Không có dữ liệu",
+            "infoFiltered": "(lọc từ _MAX_ dòng tổng cộng)",
+            "search": "Tìm kiếm:"
+        }
+    });
+});
+</script>
+{% endblock %}

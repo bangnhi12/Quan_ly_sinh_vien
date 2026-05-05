@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="mb-4">
+        <a href="{{ url_for('admin_mon.list_mon') }}" class="btn btn-secondary"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4" style="max-width: 800px; margin: 0 auto;">
+        <div class="card-header bg-primary text-white fw-bold py-3">
+            <i class="bi bi-plus-lg me-2"></i>Thêm Môn Học Mới
+        </div>
+        <form method="post" class="card-body p-5">
+            <div class="mb-4">
+                <label class="form-label fw-bold">Mã Môn <span class="text-danger">*</span></label>
+                <input type="text" name="ma_mon" class="form-control form-control-lg" placeholder="VD: CS101" required>
+                <small class="text-muted">Mã môn học duy nhất, in hoa</small>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Tên Môn <span class="text-danger">*</span></label>
+                <input type="text" name="ten_mon" class="form-control form-control-lg" placeholder="VD: Lập trình C++" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Số Tín Chỉ <span class="text-danger">*</span></label>
+                <input type="number" name="so_tin_chi" class="form-control form-control-lg" placeholder="VD: 3" min="1" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Học Kỳ</label>
+                <select name="hoc_ky" class="form-select form-select-lg">
+                    <option value="">-- Chọn học kỳ --</option>
+                    {% for i in range(1, 9) %}
+                    <option value="{{ i }}">Kỳ {{ i }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Mô Tả</label>
+                <textarea name="mo_ta" class="form-control" rows="4" placeholder="Mô tả chi tiết về môn học..."></textarea>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-center mt-5">
+                <a href="{{ url_for('admin_mon.list_mon') }}" class="btn btn-secondary btn-lg px-5">Hủy</a>
+                <button type="submit" class="btn btn-success btn-lg px-5"><i class="bi bi-check-lg me-1"></i>Thêm Môn</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

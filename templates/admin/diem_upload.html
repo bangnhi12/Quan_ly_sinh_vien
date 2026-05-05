@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Nhập Điểm Theo Excel{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Nhập Điểm Theo Excel</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Nhập Điểm</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- Alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-upload"></i> Nhập Điểm Từ File Excel
+                        </h3>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="card-body">
+                            <!-- Select Course -->
+                            <div class="form-group">
+                                <label for="ma_mon">Chọn Môn Học <span class="text-danger">*</span></label>
+                                <select class="form-control" id="ma_mon" name="ma_mon" required>
+                                    <option value="">-- Chọn môn học --</option>
+                                    {% for course in courses %}
+                                        <option value="{{ course.MaMon }}">
+                                            {{ course.MaMon }} - {{ course.TenMon }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-text text-muted">Bắt buộc - Chọn môn học để nhập điểm</small>
+                            </div>
+
+                            <!-- Semester -->
+                            <div class="form-group">
+                                <label for="hoc_ky">Học Kỳ</label>
+                                <input type="number" class="form-control" id="hoc_ky" name="hoc_ky" 
+                                       min="1" max="8" placeholder="VD: 1, 2, 3..." />
+                                <small class="form-text text-muted">Tuỳ chọn - Nhập kỳ từ 1 đến 8</small>
+                            </div>
+
+                            <!-- Academic Year -->
+                            <div class="form-group">
+                                <label for="nam_hoc">Năm Học</label>
+                                <input type="number" class="form-control" id="nam_hoc" name="nam_hoc" 
+                                       min="2000" placeholder="VD: 2026" />
+                                <small class="form-text text-muted">Tuỳ chọn - Nhập năm học</small>
+                            </div>
+
+                            <!-- File Upload -->
+                            <div class="form-group">
+                                <label for="file">Chọn File Excel <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <div class="custom-file">
+                                        <input type="file" class="custom-file-input" id="file" name="file" 
+                                               accept=".xlsx,.xls" required />
+                                        <label class="custom-file-label" for="file">Chọn file...</label>
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Chỉ chấp nhận file Excel (.xlsx hoặc .xls)
+                                </small>
+                            </div>
+
+                            <!-- Requirements -->
+                            <div class="alert alert-info">
+                                <h5>
+                                    <i class="fas fa-info-circle"></i> Yêu cầu File Excel
+                                </h5>
+                                <ul class="mb-0">
+                                    <li>File phải chứa các cột bắt buộc: <strong>MSSV, Họ tên, Lớp, Điểm quá trình, Điểm thi, Điểm tổng kết</strong></li>
+                                    <li>MSSV phải tồn tại trong hệ thống</li>
+                                    <li>Điểm phải trong khoảng 0-10</li>
+                                    <li>Điểm tổng kết là bắt buộc; Điểm quá trình và Điểm thi là tuỳ chọn</li>
+                                    <li>Nếu MSSV đã tồn tại trong cùng kỳ/năm, điểm sẽ được cập nhật</li>
+                                </ul>
+                            </div>
+
+                            <!-- Template Download -->
+                            <div class="alert alert-secondary">
+                                <h5>
+                                    <i class="fas fa-file-download"></i> Tải Template
+                                </h5>
+                                <p>
+                                    <a href="/static/template_diem.xlsx" class="btn btn-sm btn-secondary">
+                                        <i class="fas fa-download"></i> Tải file template mẫu
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Nhập Điểm
+                            </button>
+                            <a href="/admin" class="btn btn-secondary float-right">Hủy</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Info Column -->
+            <div class="col-md-4">
+                <div class="card card-warning">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-lightbulb"></i> Hướng Dẫn
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <h6>Bước 1: Chuẩn Bị File</h6>
+                        <p>
+                            Tải template mẫu và điền dữ liệu sinh viên cùng điểm của họ.
+                        </p>
+
+                        <h6>Bước 2: Chọn Môn Học</h6>
+                        <p>
+                            Chọn môn học mà bạn muốn nhập điểm từ danh sách.
+                        </p>
+
+                        <h6>Bước 3: Chọn File</h6>
+                        <p>
+                            Chọn file Excel đã chuẩn bị từ máy tính của bạn.
+                        </p>
+
+                        <h6>Bước 4: Nhập Điểm</h6>
+                        <p>
+                            Nhấn "Nhập Điểm" để tải lên và xử lý file.
+                        </p>
+
+                        <div class="alert alert-success">
+                            <strong>💡 Lưu ý:</strong>
+                            <ul class="mb-0">
+                                <li>Hệ thống sẽ tự động tìm MSSV trong database</li>
+                                <li>Nếu MSSV không tồn tại, dòng đó sẽ bị bỏ qua (báo lỗi)</li>
+                                <li>Nếu MSSV đã có điểm rồi, điểm sẽ được cập nhật</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update file label with selected filename
+document.getElementById('file').addEventListener('change', function(e) {
+    const fileName = e.target.files[0]?.name || 'Chọn file...';
+    document.querySelector('.custom-file-label').textContent = fileName;
+});
+</script>
+{% endblock %}

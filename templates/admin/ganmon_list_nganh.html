@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="bi bi-diagram-3 me-2"></i>Gán Môn cho Ngành</h2>
+            <p class="text-muted small mt-1">Quản lý các môn học của từng ngành học</p>
+        </div>
+        <a href="{{ url_for('admin_gan_mon.report') }}" class="btn btn-info">
+            <i class="bi bi-bar-chart me-1"></i>Thống Kê
+        </a>
+    </div>
+
+    {% for khoa_group in khoas_grouped %}
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-primary text-white fw-bold py-3">
+            <i class="bi bi-building me-2"></i>{{ khoa_group.khoa.TenKhoa }}
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Mã Ngành</th>
+                        <th>Tên Ngành</th>
+                        <th class="text-center">Số Môn</th>
+                        <th class="text-center" style="width: 200px;">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in khoa_group.nganhs %}
+                    <tr>
+                        <td><span class="badge bg-info">{{ item.nganh.MaNganh }}</span></td>
+                        <td><strong>{{ item.nganh.TenNganh }}</strong></td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary">{{ item.mon_count }}</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('admin_gan_mon.view_mons_by_nganh', ma_nganh=item.nganh.MaNganh) }}" 
+                                   class="btn btn-outline-primary" title="Xem chi tiết">
+                                    <i class="bi bi-eye"></i> Xem
+                                </a>
+                                <a href="{{ url_for('admin_gan_mon.assign_mon', ma_nganh=item.nganh.MaNganh) }}" 
+                                   class="btn btn-outline-success" title="Gán/Sửa môn">
+                                    <i class="bi bi-pencil"></i> Gán
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>Không có ngành nào trong hệ thống.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
